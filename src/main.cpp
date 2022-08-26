@@ -24,8 +24,8 @@ void loop()
     //Serial.print(channels[2]);
     //Serial.print("\n");
     delay(20);
-    int32_t left_speed = 0.5*channels[1] - 0.5*channels[2];
-    int32_t right_speed = -0.5*channels[1] - 0.5*channels[2];
+    int32_t left_speed = 1*channels[1] - 1*channels[2];
+    int32_t right_speed = -1*channels[1] - 1*channels[2];
     left_speed *= 2;
     right_speed *= 2;
     set_motor_speed_left(left_speed);
