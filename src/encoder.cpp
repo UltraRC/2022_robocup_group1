@@ -5,6 +5,9 @@
 #define encoder_2_A  18
 #define encoder_2_B  28
 
+void doEncoder1A();
+void doEncoder2A();
+
 volatile unsigned int encoderPos1 = 0;
 unsigned int lastReportedPos1 = 1;
 volatile unsigned int encoderPos2 = 0;
@@ -16,7 +19,8 @@ boolean A_set2 = false;
 boolean B_set2 = false;
 
 void encoder_init()
-{   pinMode(49, OUTPUT);                 //Pin 49 is used to enable IO power
+{   
+    pinMode(49, OUTPUT);                 //Pin 49 is used to enable IO power
     digitalWrite(49, 1);                 //Enable IO power on main CPU board
 
     pinMode(encoder_1_A, INPUT);       //Set encoder pins as inputs
@@ -30,8 +34,9 @@ void encoder_init()
     Serial.begin(9600);                       //Set up serial communications    
 }
 
-void loop()
-{ 
+
+void encoder_update()
+{
     //If there has been a change in value of either encoder then print the 
     //  encoder values to the serial port
     if ((lastReportedPos1 != encoderPos1)||(lastReportedPos2 != encoderPos2)) 
@@ -44,10 +49,12 @@ void loop()
         lastReportedPos1 = encoderPos1;
         lastReportedPos2 = encoderPos2;
     }
+
 }
 
 // Interrupt on A changing state
-void doEncoder1A(){
+void doEncoder1A()
+{
     // Test transition
     A_set1 = digitalRead(encoder_1_A) == HIGH;
     // and adjust counter + if A leads B
@@ -60,7 +67,8 @@ void doEncoder1A(){
 
 
 // Interrupt on A changing state
-void doEncoder2A(){
+void doEncoder2A()
+{
     // Test transition
     A_set2 = digitalRead(encoder_2_A) == HIGH;
     // and adjust counter + if A leads B
