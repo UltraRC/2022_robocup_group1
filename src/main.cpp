@@ -16,8 +16,8 @@
 
 #define MAX_ANGLE_LEFT 80
 #define MIN_ANGLE_LEFT -8
-#define MAX_ANGLE_MAIN 70
-#define MIN_ANGLE_MAIN -30
+#define MIN_ANGLE_MAIN 50
+#define MAX_ANGLE_MAIN -85
 
 Servo main_servo;
 Servo pincer_servo_left;
@@ -49,7 +49,7 @@ void setup()
     init_rear_servo();
     init_electromag();
     
-    //Serial.begin(9600);
+    Serial.begin(9600);
 }
 
 void loop()
@@ -63,6 +63,7 @@ void loop()
     int32_t left_speed = 0.5*channels[1] - 0.5*channels[2];
     int32_t right_speed = -0.5*channels[1] - 0.5*channels[2];
     int32_t main_servo_angle = map(channels[0], -100, 100, MIN_ANGLE_MAIN, MAX_ANGLE_MAIN);
+    Serial.printf("Angle: %d\n", main_servo_angle);
     int32_t pincer_servos_angle = map(channels[3], -100, 100, MIN_ANGLE_LEFT, MAX_ANGLE_LEFT);
     //int32_t rear_servo_angle = (channels[3] + 100)*90/200;
     left_speed *= 2;
