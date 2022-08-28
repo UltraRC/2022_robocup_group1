@@ -2,23 +2,32 @@
 #include "encoder.h"
 #include "motor.h"
 
-#define encoder_1_A  2 // Encoder pin-assignments
-#define encoder_1_B  3
-#define encoder_2_A  4
-#define encoder_2_B  5
+#define MICROSECONDS_PER_SECOND 1000000
+#define ENCODER_PPS             663.0
 
-volatile int64_t encoderPos1 = 0;
- int64_t lastReportedPos1 = 1;
-volatile int64_t encoderPos2 = 0;
-int64_t lastReportedPos2 = 1;
+// --------------- Encoder Reverse Macros ---------------
+//** If defined, the veclocity for a particular encoder will be reversed **
+#define LEFT_ENCODER_REVERSE
+#define RIGHT_ENCODER_REVERSE
+
+// --------------- Pin Definitions ---------------
+#define encoder_1_A             2   // Encoder pin-assignments
+#define encoder_1_B             3
+#define encoder_2_A             4
+#define encoder_2_B             5
+
+volatile int64_t encoderPos1 =  0;
+int64_t lastReportedPos1 =      1;
+volatile int64_t encoderPos2 =  0;
+int64_t lastReportedPos2 =      1;
 
 boolean A_set1 = false;
 boolean B_set1 = false;
 boolean A_set2 = false;
 boolean B_set2 = false;
 
-double velocity = 0;                                        // 
-double set_point = 0;
+double velocity_left =          0;
+double velocity_right =         0;
 
 void init_encoder()
 {   
@@ -31,9 +40,7 @@ void init_encoder()
     pinMode(encoder_2_B, INPUT); 
 
     attachInterrupt(encoder_1_A, doEncoder1A, CHANGE);      // Set up an interrupt for each encoder
-    attachInterrupt(encoder_2_A, doEncoder2A, CHANGE);
-
-    Serial.begin(9600);                                     // Set up serial communications    
+    attachInterrupt(encoder_2_A, doEncoder2A, CHANGE);  
 }
 
 /**
@@ -42,74 +49,42 @@ void init_encoder()
  */
 void calc_encoder_velocty()
 {
-    static int64_t last_position = 0;                       // Last position value of the encoder
+    static int64_t last_position_left = 0;                       // Last position value of the encoder
+    static int64_t last_position_right = 0;
     static uint64_t last_calc_time = 0;                     // Last time this code ran (micro-seconds)
-    static uint64_t last_print_time = 0;
-
     int64_t delta_calc_time = micros() - last_calc_time;
-    uint64_t delta_print_time = micros() - last_print_time;
 
-    if(delta_calc_time > 10000)
-    {
-        last_calc_time = micros();
-        int64_t delta_position = encoderPos1 - last_position;
-        last_position = encoderPos1;
-        velocity = 1000000 * delta_position / delta_calc_time;
-        velocity /= 663;
-    }
+    last_calc_time = micros();
 
-    if(delta_print_time > 3000000) // Delay 1s
-    {
-        //Serial.println(velocity);
-        static int state = 1;
-        state*=-1;
-        if(state > 0)
-        {
-            set_point = 6;
-        } else 
-        {
-            set_point = 3;
-        }
-        last_print_time = micros();
-    }
+    last_position_left = encoderPos1;
+    last_position_right = encoderPos2;
+
+    velocity_left = MICROSECONDS_PER_SECOND * (encoderPos1 - last_position_left)  / delta_calc_time;
+    velocity_left = MICROSECONDS_PER_SECOND * (encoderPos1 - last_position_right) / delta_calc_time;
+    
+    velocity_left  *= 2*PI / 663.0; // Convert to rad/s
+    velocity_right *= 2*PI / 663.0;
 }
-
 
 void update_endoder()
 {
-    //If there has been a change in value of either encoder then print the 
-    //  encoder values to the serial port
-    if ((lastReportedPos1 != encoderPos1)||(lastReportedPos2 != encoderPos2)) 
-    {
-        // Serial.print("Index:");
-        // Serial.print(encoderPos1, DEC);
-        // Serial.print(":");
-        // Serial.print(encoderPos2, DEC);
-        // Serial.println();
-        lastReportedPos1 = encoderPos1;
-        lastReportedPos2 = encoderPos2;
-    }
-
-    controller();
+    calc_encoder_velocty();
 }
 
-void controller()
+/**
+ * @brief Returns [rad/s]
+ */
+double get_velocity_left()
 {
-    static double cum_error = 0;
-    double motor_control;
+    return velocity_left;
+}
 
-    double kp = 3;
-    double ki = 0.003;
-
-    //double set_point = 1.5; // hz
-    double error = set_point - velocity;
-    cum_error += error;
-    motor_control = kp*error + ki*cum_error;
-    set_motor_speed_right(-motor_control);
-    //Serial.println(velocity);
-    Serial.print("Error: ");        Serial.print(error);        Serial.print("\t");
-    Serial.print("c_error: ");      Serial.print(cum_error);    Serial.print("\t");
-    Serial.print("Control: ");      Serial.print(motor_control);Serial.print("\n");
+/**
+ * @brief Returns [rad/s]
+ */
+double get_velocity_right()
+{
+    return velocity_right;
 }
 
 // Interrupt on A changing state

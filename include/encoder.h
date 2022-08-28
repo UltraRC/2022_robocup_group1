@@ -10,4 +10,7 @@ void controller();
 void init_encoder();
 void update_endoder();
 
+double get_velocity_left();
+double get_velocity_right();
+
 #endif // ENCODER_H

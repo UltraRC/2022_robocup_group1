@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "motor.h"
 #include "PPMReader.h"
-#include "encoder.h"
 
 #define RC_IN 23
 #define NUM_CHANNELS 6
@@ -13,28 +12,19 @@ void update_channels();
 
 void setup()
 {
-    init_encoder();
     init_motors();
-    
-    //Serial.begin(9600);
 }
 
 void loop()
 {
     update_channels();
-    update_endoder();
-    //Serial.print(channels[1]);
-    //Serial.print("\t");
-    //Serial.print(channels[2]);
-    //Serial.print("\n");
-    //delay(20);
+    update_motors();
     int32_t left_speed = 1*channels[1] - 1*channels[2];
     int32_t right_speed = -1*channels[1] - 1*channels[2];
     left_speed *= 2;
     right_speed *= 2;
     //set_motor_speed_left(left_speed);
     //set_motor_speed_right(right_speed);
-    calc_encoder_velocty();
 }
 
 void update_channels()
