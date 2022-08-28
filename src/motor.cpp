@@ -76,7 +76,7 @@ void set_motor_velocity_right(double set)
 /**
  * @brief Takes in speed in percent [-100%, 100%]
  */
-void set_motor_speed_left(int32_t speed)
+void set_motor_power_left(int32_t speed)
 {
     #ifdef LEFT_MOTOR_REVERSE
     speed*=-1;
@@ -89,7 +89,7 @@ void set_motor_speed_left(int32_t speed)
 /**
  * @brief Takes in speed in percent [-100%, 100%]
  */
-void set_motor_speed_right(int32_t speed)
+void set_motor_power_right(int32_t speed)
 {
     #ifdef RIGHT_MOTOR_REVERSE
     speed*=-1;
@@ -122,7 +122,7 @@ void update_motors()
         //Serial.printf("Veclocity: %.3f,\tError: %.3f,\tcum_error: %.3f,\tControl: %.3f\n", velocity_right, pid_right_motor.prevError, pid_right_motor.integrator, control_right);
         Serial.printf("%f %f %f\n", velocity_left, left_velocity_set, control_left);
         
-        set_motor_speed_left(control_left);
-        set_motor_speed_right(control_right);
+        set_motor_power_left(control_left);
+        set_motor_power_right(control_right);
     }
 }
