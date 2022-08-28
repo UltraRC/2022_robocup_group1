@@ -13,18 +13,19 @@ void update_channels();
 void setup()
 {
     init_motors();
+    Serial.begin(9600);
 }
 
 void loop()
 {
     update_channels();
     update_motors();
-    int32_t left_speed = 1*channels[1] - 1*channels[2];
-    int32_t right_speed = -1*channels[1] - 1*channels[2];
-    left_speed *= 2;
+    int32_t left_speed = -0.5*channels[1] + 0.5*channels[2];
+    int32_t right_speed = 0.5*channels[1] + 0.5*channels[2];
+    left_speed  *= 2;
     right_speed *= 2;
-    //set_motor_speed_left(left_speed);
-    //set_motor_speed_right(right_speed);
+    set_motor_velocity_left(map(left_speed, -100, 100, -45, 45));
+    set_motor_velocity_right(map(right_speed, -100, 100, -45, 45));
 }
 
 void update_channels()

@@ -8,13 +8,13 @@
 // --------------- Encoder Reverse Macros ---------------
 //** If defined, the veclocity for a particular encoder will be reversed **
 #define LEFT_ENCODER_REVERSE
-#define RIGHT_ENCODER_REVERSE
+//#define RIGHT_ENCODER_REVERSE
 
 // --------------- Pin Definitions ---------------
-#define encoder_1_A             2   // Encoder pin-assignments
-#define encoder_1_B             3
-#define encoder_2_A             4
-#define encoder_2_B             5
+#define encoder_1_A             4   // Encoder pin-assignments
+#define encoder_1_B             5
+#define encoder_2_A             2
+#define encoder_2_B             3
 
 volatile int64_t encoderPos1 =  0;
 int64_t lastReportedPos1 =      1;
@@ -56,12 +56,15 @@ void calc_encoder_velocty()
 
     last_calc_time = micros();
 
-    last_position_left = encoderPos1;
-    last_position_right = encoderPos2;
 
     velocity_left = MICROSECONDS_PER_SECOND * (encoderPos1 - last_position_left)  / delta_calc_time;
-    velocity_left = MICROSECONDS_PER_SECOND * (encoderPos1 - last_position_right) / delta_calc_time;
+    velocity_right = MICROSECONDS_PER_SECOND * (encoderPos2 - last_position_right) / delta_calc_time;
     
+    last_position_left = encoderPos1;
+    last_position_right = encoderPos2;
+    
+    //Serial.printf("V_left: %.3f\n", velocity_left);
+
     velocity_left  *= 2*PI / 663.0; // Convert to rad/s
     velocity_right *= 2*PI / 663.0;
 }
@@ -76,6 +79,9 @@ void update_endoder()
  */
 double get_velocity_left()
 {
+    #ifdef LEFT_ENCODER_REVERSE
+    return -1*velocity_left;
+    #endif // LEFT_ENCODER_REVERSE
     return velocity_left;
 }
 
@@ -84,6 +90,9 @@ double get_velocity_left()
  */
 double get_velocity_right()
 {
+    #ifdef RIGHT_ENCODER_REVERSE
+    return -1*velocity_right;
+    #endif // RIGHT_ENCODER_REVERSE
     return velocity_right;
 }
 
