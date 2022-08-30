@@ -48,33 +48,31 @@ void setup()
     init_pincer_servos();
     init_rear_servo();
     init_electromag();
-    
     Serial.begin(9600);
 }
 
 void loop()
 {
     update_channels();
-    //Serial.print(channels[1]);
-    //Serial.print("\t");
-    //Serial.print(channels[2]);
-    //Serial.print("\n");
-    delay(20);
+    update_motors();
+
     int32_t left_speed = 0.5*channels[1] - 0.5*channels[2];
     int32_t right_speed = -0.5*channels[1] - 0.5*channels[2];
+    left_speed  *= 2;
+    right_speed *= 2;
+    set_motor_velocity_left(map(left_speed, -100, 100, -45, 45));
+    set_motor_velocity_right(map(right_speed, -100, 100, -45, 45));
+    
+    
     int32_t main_servo_angle = map(channels[0], -100, 100, MIN_ANGLE_MAIN, MAX_ANGLE_MAIN);
     Serial.printf("Angle: %d\n", main_servo_angle);
     int32_t pincer_servos_angle = map(channels[3], -100, 100, MIN_ANGLE_LEFT, MAX_ANGLE_LEFT);
     //int32_t rear_servo_angle = (channels[3] + 100)*90/200;
-    left_speed *= 2;
-    right_speed *= 2;
     if (channels[4] > 50) {
         input = 1;
     } else {
         input = 0;
     }
-    set_motor_speed_left(left_speed);
-    set_motor_speed_right(right_speed);
     set_main_servo_angle(main_servo_angle);
     set_electromag(input);
     set_pincer_servos_angle(pincer_servos_angle);
