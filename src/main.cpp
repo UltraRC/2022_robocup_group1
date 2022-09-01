@@ -56,8 +56,8 @@ void loop()
     update_channels();
     update_motors();
 
-    int32_t left_speed = 0.5*channels[1] - 0.5*channels[2];
-    int32_t right_speed = -0.5*channels[1] - 0.5*channels[2];
+    int32_t left_speed = -0.5*channels[1] + 0.5*channels[2];
+    int32_t right_speed = 0.5*channels[1] + 0.5*channels[2];
     left_speed  *= 2;
     right_speed *= 2;
     set_motor_velocity_left(map(left_speed, -100, 100, -45, 45));
@@ -69,9 +69,9 @@ void loop()
     int32_t pincer_servos_angle = map(channels[3], -100, 100, MIN_ANGLE_LEFT, MAX_ANGLE_LEFT);
     //int32_t rear_servo_angle = (channels[3] + 100)*90/200;
     if (channels[4] > 50) {
-        input = 1;
-    } else {
         input = 0;
+    } else {
+        input = 1;
     }
     set_main_servo_angle(main_servo_angle);
     set_electromag(input);
