@@ -120,7 +120,7 @@ void update_motors()
         float control_right = PIDController_Update(&pid_right_motor, right_velocity_set, velocity_right);
 
         //Serial.printf("Veclocity: %.3f,\tError: %.3f,\tcum_error: %.3f,\tControl: %.3f\n", velocity_right, pid_right_motor.prevError, pid_right_motor.integrator, control_right);
-        Serial.printf("%f %f %f\n", velocity_left, left_velocity_set, control_left);
+        //Serial.printf("%f %f %f\n", velocity_left, left_velocity_set, control_left);
         
         set_motor_power_left(control_left);
         set_motor_power_right(control_right);
