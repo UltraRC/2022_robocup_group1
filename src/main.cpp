@@ -112,8 +112,9 @@ void pickup_weight_state()
 
     case task2:                                 // Close, and then open pincers
         set_pincer_servos_angle(MAX_ANGLE_PINCER);
-        if (time_since_task_transition > 700)
+        if (time_since_task_transition > 600)
         {
+            set_main_servo_angle(MAX_ANGLE_MAIN+15);
             set_pincer_servos_angle(MIN_ANGLE_PINCER);
             current_task = task3;
         }
@@ -133,7 +134,7 @@ void pickup_weight_state()
     case task4:                                 // Turn on electro-magnet, and lower main-servo
         set_electromag(true);
         set_main_servo_angle(MAX_ANGLE_MAIN);
-        if (time_since_task_transition > 500)
+        if (time_since_task_transition > 450)
         {
             set_main_servo_angle(MIN_ANGLE_MAIN);
             current_task = task5;
