@@ -2,6 +2,7 @@
 #include "PPMReader.h"
 #include "motor.h"
 #include "actuator.h"
+#include "sensor.h"
 
 #define RC_IN 23
 #define NUM_CHANNELS 6
@@ -20,6 +21,8 @@ typedef enum
     pickup_weight
 } state_t;
 
+void print_state(state_t state);
+
 state_t state = start;      // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 
@@ -27,11 +30,13 @@ void setup()
 {
     init_motors();
     init_actuators();
-    // Serial.begin(9600);
+    init_sensors();
+    Serial.begin(9600);
 }
 
 void loop()
 {
+    update_sensors();
     state_tracker();        // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
     update_channels();      // Updates the array of channel values from the remote control
     update_motors();        // Runs the PID loop using the encoders and controls the speed of the motors
@@ -55,7 +60,7 @@ void start_state()
 {
     int32_t left_speed, right_speed;
 
-    set_actuators_default_values();
+    // set_actuators_default_values();
     left_speed = -0.5 * channels[1] + 0.5 * channels[2];
     right_speed = 0.5 * channels[1] + 0.5 * channels[2];
     left_speed *= 2;
@@ -63,8 +68,18 @@ void start_state()
     set_motor_velocity_left(map(left_speed, -100, 100, -45, 45));
     set_motor_velocity_right(map(right_speed, -100, 100, -45, 45));
 
-    if (channels[4] > 50)
-        state = pickup_weight;      // Transition state if button is pressed on remote
+    if(weight_detected())
+    {
+        set_main_servo_angle(MAX_ANGLE_MAIN+15);
+        if(channels[4] < -50) state = pickup_weight;
+    } else
+    {
+        set_actuators_default_values();
+    }
+
+    // if(weight_detected() && channels[4] < -50) state = pickup_weight;      // Transition state if button is pressed on remote
+
+    // if (channels[4] > 50) state = pickup_weight;      // Transition state if button is pressed on remote
 }
 
 void pickup_weight_state()
@@ -76,7 +91,8 @@ void pickup_weight_state()
         task2,
         task3,
         task4,
-        task5
+        task5,
+        task6
     } task_t;
 
     static task_t current_task = start_task;
@@ -96,6 +112,7 @@ void pickup_weight_state()
     switch (current_task)
     {
     case start_task:                            // Default task
+        set_pincer_servos_angle(MIN_ANGLE_PINCER);
         current_task = task1;
         break;
 
@@ -149,6 +166,14 @@ void pickup_weight_state()
             set_electromag(false);
             set_motor_velocity_left(0);
             set_motor_velocity_right(0);
+            current_task = task6;
+        }
+        break;
+
+    case task6:
+        set_actuators_default_values();
+        if(time_since_task_transition > 500)
+        {
             current_task = start_task;
             state = start;
         }
@@ -214,6 +239,7 @@ void state_tracker()
 
     if (state != last_state)
     {
+        print_state(state);   
         last_state_transition_time = millis();
         last_state = state;
     }
@@ -226,5 +252,21 @@ void update_channels()
         int32_t val = ppm.latestValidChannelValue(i + 1, 0);
         val = map(val, 1000, 2000, -100, 100); // Change from us-PWM to %
         channels[i] = val;
+    }
+}
+
+void print_state(state_t state)
+{
+    switch (state)
+    {
+    case start:
+        Serial.printf("state is: \"start\"\n");
+        break;
+    case pickup_weight:
+        Serial.printf("state is: \"pickup weight\"\n");
+        break;
+    
+    default:
+        break;
     }
 }
