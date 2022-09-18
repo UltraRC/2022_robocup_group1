@@ -112,7 +112,7 @@ void pickup_weight_state()
     switch (current_task)
     {
     case start_task:                            // Default task
-        set_pincer_servos_angle(MIN_ANGLE_PINCER);
+        // set_pincer_servos_angle(MIN_ANGLE_PINCER);
         current_task = task1;
         break;
 
@@ -129,10 +129,14 @@ void pickup_weight_state()
 
     case task2:                                 // Close, and then open pincers
         set_pincer_servos_angle(MAX_ANGLE_PINCER);
+        set_motor_velocity_left(-12);
+        set_motor_velocity_right(-12);
         if (time_since_task_transition > 600)
         {
-            set_main_servo_angle(MAX_ANGLE_MAIN+15);
+            set_main_servo_angle(MAX_ANGLE_MAIN+12);
             set_pincer_servos_angle(MIN_ANGLE_PINCER);
+            set_motor_velocity_left(0);
+            set_motor_velocity_right(0);
             current_task = task3;
         }
         break;
@@ -140,8 +144,9 @@ void pickup_weight_state()
     case task3:                                 // Move fowards, slowly
         set_motor_velocity_left(10);
         set_motor_velocity_right(10);
-        if (time_since_task_transition > 1200)
+        if (time_since_task_transition > 1700)
         {
+            set_pincer_servos_angle(MAX_ANGLE_PINCER);
             set_motor_velocity_left(0);
             set_motor_velocity_right(0);
             current_task = task4;
@@ -151,6 +156,7 @@ void pickup_weight_state()
     case task4:                                 // Turn on electro-magnet, and lower main-servo
         set_electromag(true);
         set_main_servo_angle(MAX_ANGLE_MAIN);
+        set_pincer_servos_angle(MIN_ANGLE_PINCER);
         if (time_since_task_transition > 450)
         {
             set_main_servo_angle(MIN_ANGLE_MAIN);
