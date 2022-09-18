@@ -127,11 +127,11 @@ void pickup_weight_state()
         }
         break;
 
-    case task2:                                 // Close, and then open pincers
+    case task2:                                 // Close then open pincers
         set_pincer_servos_angle(MAX_ANGLE_PINCER);
-        set_motor_velocity_left(-12);
-        set_motor_velocity_right(-12);
-        if (time_since_task_transition > 600)
+        set_motor_velocity_left(-15);
+        set_motor_velocity_right(-15);
+        if (time_since_task_transition > 1000)
         {
             set_main_servo_angle(MAX_ANGLE_MAIN+12);
             set_pincer_servos_angle(MIN_ANGLE_PINCER);
