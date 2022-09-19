@@ -77,6 +77,14 @@ void start_state()
         set_actuators_default_values();
     }
 
+    if(channels[5] < -50)
+    {
+        set_weight_drop(true);
+    } else
+    {
+        set_weight_drop(false);
+    }
+
     // if(weight_detected() && channels[4] < -50) state = pickup_weight;      // Transition state if button is pressed on remote
 
     // if (channels[4] > 50) state = pickup_weight;      // Transition state if button is pressed on remote

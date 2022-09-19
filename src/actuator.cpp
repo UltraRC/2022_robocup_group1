@@ -13,6 +13,7 @@ void init_actuators()
     init_pincer_servos();
     init_rear_servo();
     init_electromag();
+    init_weight_drop();
     set_actuators_default_values();
 }
 
@@ -22,6 +23,11 @@ void set_actuators_default_values()
     set_main_servo_angle(MAX_ANGLE_MAIN+50);
     set_electromag(false);
     set_pincer_servos_angle(MIN_ANGLE_PINCER);
+}
+
+void init_weight_drop(void)
+{
+    pinMode(WEIGHT_DROP_PIN, OUTPUT);
 }
 
 void init_main_servo()
@@ -66,4 +72,9 @@ void set_electromag(boolean set)
     {
         digitalWrite(ELECTROMAG_PIN, LOW);
     }
+}
+
+void set_weight_drop(boolean set)
+{
+    digitalWrite(WEIGHT_DROP_PIN, set);
 }
