@@ -12,7 +12,7 @@
     #define MIN_ANGLE_PINCER    +80
     #define MAX_ANGLE_PINCER    -5
     #define MIN_ANGLE_MAIN      +50
-    #define MAX_ANGLE_MAIN      -76
+    #define MAX_ANGLE_MAIN      -65
 
     void init_actuators(void);
     

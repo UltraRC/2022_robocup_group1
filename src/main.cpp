@@ -31,7 +31,7 @@ void setup()
     init_motors();
     init_actuators();
     init_sensors();
-    Serial.begin(9600);
+    // Serial.begin(9600);
 }
 
 void loop()
@@ -253,7 +253,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        print_state(state);   
+        // print_state(state);          // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }
