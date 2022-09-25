@@ -56,12 +56,22 @@ void init_tof_sensors()
     for (uint8_t i = 0; i < L0_sensor_count; i++)
     {
         io.pinMode(xshutPinsL0[i], OUTPUT);
-        io.digitalWrite(xshutPinsL0[i], LOW);
+        io.digitalWrite(xshutPinsL0[i], HIGH);
     }
 
     for (uint8_t i = 0; i < L1_sensor_count; i++)
     {
         io.pinMode(xshutPinsL1[i], OUTPUT);
+        io.digitalWrite(xshutPinsL1[i], HIGH);
+    }
+
+    for (uint8_t i = 0; i < L0_sensor_count; i++)
+    {
+        io.digitalWrite(xshutPinsL0[i], LOW);
+    }
+
+    for (uint8_t i = 0; i < L1_sensor_count; i++)
+    {
         io.digitalWrite(xshutPinsL1[i], LOW);
     }
 
