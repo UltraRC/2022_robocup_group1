@@ -12,10 +12,10 @@
 #define VL53L1X_ADDRESS_START 0x35
 
 const uint8_t L0_sensor_count = 2;
-const uint8_t L1_sensor_count = 0;
+const uint8_t L1_sensor_count = 3;
 
 const uint8_t xshutPinsL0[8] = {0, 1};
-const uint8_t xshutPinsL1[8] = {2, 3};
+const uint8_t xshutPinsL1[8] = {2, 3, 4, 5, 6};
 
 const byte SX1509_ADDRESS = 0x3F;       // Adress for io-expander
 SX1509 io;                              // Create an SX1509 object to be used throughout
@@ -38,7 +38,7 @@ void update_sensors(void)
 {
     static uint64_t last_time = 0;
 
-    if(millis()-last_time > 100)
+    if(millis()-last_time > 65)
     {
         update_tof_sensors();
         last_time = millis();
@@ -83,7 +83,7 @@ void init_tof_sensors()
         // not level shifted.) Then wait a bit for the sensor to start up.
         // pinMode(xshutPins[i], INPUT);
         io.digitalWrite(xshutPinsL0[i], HIGH);
-        delay(50);
+        delay(10);
 
         sensorsL0[i].setTimeout(500);
         if (!sensorsL0[i].init())
@@ -99,7 +99,7 @@ void init_tof_sensors()
         // the default). To make it simple, we'll just count up from 0x2A.
         sensorsL0[i].setAddress(VL53L0X_ADDRESS_START + i);
 
-        sensorsL0[i].startContinuous(0);
+        sensorsL0[i].startContinuous(20);
     }
 
     // L1 Enable, initialize, and start each sensor, one by one.
@@ -126,7 +126,7 @@ void init_tof_sensors()
         // the default). To make it simple, we'll just count up from 0x2A.
         sensorsL1[i].setAddress(VL53L1X_ADDRESS_START + i);
 
-        sensorsL1[i].startContinuous(50);
+        sensorsL1[i].startContinuous(20);
     }
 }
 
@@ -177,7 +177,8 @@ void update_tof_sensors()
 
     // Serial.printf("%f\t%f\t%f\n", L0X_sample, L1X_sample, L1X_sample-L0X_sample);
     
-    Serial.printf("%u\n", sensor_L0_values[0]);
+    // Serial.printf("L0_1: %u\t L0_2: %u\t L1_1: %u\t L1_2: %u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1]);
+    // Serial.printf("%u\t%u\t%u\t%u\t%u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1],sensor_L1_values[2]);
 
 }
 
