@@ -12,13 +12,17 @@ int32_t channels[NUM_CHANNELS];
 
 void start_state();
 void pickup_weight_state();
+void spin_state();
+void move_forward_state();
 
 void state_tracker();
 void update_channels();
 typedef enum
 {
     start = 0,
-    pickup_weight
+    pickup_weight,
+    spin,
+    move_forward
 } state_t;
 
 void print_state(state_t state);
@@ -31,12 +35,12 @@ void setup()
     init_motors();
     init_actuators();
     init_sensors();
-    // Serial.begin(9600);
+    Serial.begin(9600);
 }
 
 void loop()
 {
-    update_sensors();
+    //update_sensors();
     state_tracker();        // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
     update_channels();      // Updates the array of channel values from the remote control
     update_motors();        // Runs the PID loop using the encoders and controls the speed of the motors
@@ -50,7 +54,12 @@ void loop()
     case pickup_weight:
         pickup_weight_state();
         break;
-
+    case spin:
+        spin_state();
+        break;
+    case move_forward:
+        move_forward_state();
+        break;
     default:
         break;
     }
@@ -75,6 +84,7 @@ void start_state()
     } else
     {
         set_actuators_default_values();
+        state = spin;
     }
 
     if(channels[5] < -50)
@@ -189,7 +199,7 @@ void pickup_weight_state()
         if(time_since_task_transition > 500)
         {
             current_task = start_task;
-            state = start;
+            state = spin;
         }
         break;
 
@@ -197,6 +207,111 @@ void pickup_weight_state()
         break;
     }
 }
+
+
+void spin_state()
+{
+    //** Add an arbitrary number of states to complete complete a sequence of events **//
+    typedef enum
+    {
+        start_task = 0,
+        task1
+    } task_t;
+
+    static task_t current_task = start_task;
+    static task_t last_task = start_task;
+
+    static uint64_t last_task_transition_time = 0;
+
+    if (current_task != last_task)
+    {
+        last_task = current_task;
+        last_task_transition_time = millis();
+    }
+
+    uint64_t time_since_task_transition = millis() - last_task_transition_time;
+
+    // ------------------- State-machine tasks below ---------------------
+    switch (current_task)
+    {
+    case start_task:
+        current_task = task1;
+        break;
+    
+    case task1: //spins robot until weight detected
+        //** Some initilization code!! **//
+        set_motor_velocity_left(-10);
+        set_motor_velocity_right(10);
+
+        if(weight_detected())       // Allows for non-blocking delays
+        {
+            //** Do a thing after waiting for 1-second!! **//
+            set_motor_velocity_left(0);
+            set_motor_velocity_right(0);
+
+            current_task = start_task;  // Reset current_task before changing state
+            state = pickup_weight;              // Change state
+        }
+        if (time_since_task_transition > 5000) 
+        {
+            current_task = start_task;  // Reset current_task before changing state
+            state = move_forward;  
+        }
+        break;
+    
+    default:
+        break;
+    }
+}
+
+void move_forward_state()
+{
+    //** Add an arbitrary number of states to complete complete a sequence of events **//
+    typedef enum
+    {
+        start_task = 0,
+        task1
+    } task_t;
+
+    static task_t current_task = start_task;
+    static task_t last_task = start_task;
+
+    static uint64_t last_task_transition_time = 0;
+
+    if (current_task != last_task)
+    {
+        last_task = current_task;
+        last_task_transition_time = millis();
+    }
+
+    uint64_t time_since_task_transition = millis() - last_task_transition_time;
+
+    // ------------------- State-machine tasks below ---------------------
+    switch (current_task)
+    {
+    case start_task:
+        current_task = task1;
+        break;
+    
+    case task1:
+        //** Some initilization code!! **//
+        //when distance sensors in place, set motor velocity for left and write proportional to distance to wall when below threshold
+        set_motor_velocity_left(10);
+        set_motor_velocity_right(10);
+        if(time_since_task_transition > 2000)       // Allows for non-blocking delays
+        {
+            //** Do a thing after waiting for 1-second!! **//
+
+            current_task = start_task;  // Reset current_task before changing state
+            state = spin;              // Change state
+        }
+        break;
+    
+    default:
+        break;
+    }
+}
+
 
 void generic_state()
 {

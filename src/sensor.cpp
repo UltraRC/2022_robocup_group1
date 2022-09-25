@@ -76,7 +76,7 @@ void init_tof_sensors()
             Serial.print("Failed to detect and initialize sensor L0 ");
             Serial.println(i);
             while (1)
-                ;
+               ;
         }
 
         // Each sensor must have its address changed to a unique value other than
