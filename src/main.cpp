@@ -32,10 +32,16 @@ uint64_t time_since_last_state_transition = 0;
 
 void setup()
 {
+    Serial.begin(9600);
+    // while(!Serial)
+    // {
+    //     ;       // Wait until serial connection
+    // }
+    // Serial.printf("Serial initiated!!\n\n");
+
     init_motors();
     init_actuators();
     init_sensors();
-    Serial.begin(9600);
 }
 
 void loop()
