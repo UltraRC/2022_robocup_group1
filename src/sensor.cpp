@@ -12,7 +12,7 @@
 #define VL53L1X_ADDRESS_START 0x35
 
 const uint8_t L0_sensor_count = 2;
-const uint8_t L1_sensor_count = 3;
+const uint8_t L1_sensor_count = 5;
 
 const uint8_t xshutPinsL0[8] = {0, 1};
 const uint8_t xshutPinsL1[8] = {2, 3, 4, 5, 6};
@@ -178,11 +178,21 @@ void update_tof_sensors()
     // Serial.printf("%f\t%f\t%f\n", L0X_sample, L1X_sample, L1X_sample-L0X_sample);
     
     // Serial.printf("L0_1: %u\t L0_2: %u\t L1_1: %u\t L1_2: %u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1]);
-    // Serial.printf("%u\t%u\t%u\t%u\t%u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1],sensor_L1_values[2]);
+    // Serial.printf("%u\t%u\t%u\t%u\t%u\t%u\t%u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1],sensor_L1_values[2], sensor_L1_values[3], sensor_L1_values[4]);
 
 }
 
 bool weight_detected()
 {
     return is_weight_detected;
+}
+
+uint16_t get_sensor_right(void)
+{
+    return sensor_L0_values[0];
+}
+
+uint16_t get_sensor_front_right(void)
+{
+    return sensor_L1_values[2];
 }

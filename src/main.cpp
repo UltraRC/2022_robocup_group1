@@ -3,6 +3,7 @@
 #include "motor.h"
 #include "actuator.h"
 #include "sensor.h"
+#include "wall_follow.h"
 
 #define RC_IN 23
 #define NUM_CHANNELS 6
@@ -10,29 +11,30 @@
 PPMReader ppm(RC_IN, NUM_CHANNELS);
 int32_t channels[NUM_CHANNELS];
 
-void start_state();
-void pickup_weight_state();
-void spin_state();
-void move_forward_state();
-
-void state_tracker();
-void update_channels();
 typedef enum
 {
     start = 0,
     pickup_weight,
     spin,
-    move_forward
+    move_forward,
+    follow_wall
 } state_t;
 
+void start_state();
+void pickup_weight_state();
+void spin_state();
+void move_forward_state();
+void state_tracker();
+void update_channels();
 void print_state(state_t state);
+void follow_wall_state();
 
 state_t state = start;      // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 
 void setup()
 {
-    Serial.begin(9600);
+    // Serial.begin(9600);
     // while(!Serial)
     // {
     //     ;       // Wait until serial connection
@@ -42,11 +44,12 @@ void setup()
     init_motors();
     init_actuators();
     init_sensors();
+    init_wall_follow();
 }
 
 void loop()
 {
-    //update_sensors();
+    update_sensors();
     state_tracker();        // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
     update_channels();      // Updates the array of channel values from the remote control
     update_motors();        // Runs the PID loop using the encoders and controls the speed of the motors
@@ -55,6 +58,7 @@ void loop()
     {
     case start:
         start_state();
+        state = follow_wall;
         break;
 
     case pickup_weight:
@@ -66,6 +70,10 @@ void loop()
     case move_forward:
         move_forward_state();
         break;
+    case follow_wall:
+        update_wall_follow();
+        break;
+
     default:
         break;
     }
@@ -83,23 +91,23 @@ void start_state()
     set_motor_velocity_left(map(left_speed, -100, 100, -45, 45));
     set_motor_velocity_right(map(right_speed, -100, 100, -45, 45));
 
-    if(weight_detected())
-    {
-        set_main_servo_angle(MAX_ANGLE_MAIN+15);
-        if(channels[4] < -50) state = pickup_weight;
-    } else
-    {
-        set_actuators_default_values();
-        state = spin;
-    }
+    // if(weight_detected())
+    // {
+    //     set_main_servo_angle(MAX_ANGLE_MAIN+15);
+    //     if(channels[4] < -50) state = pickup_weight;
+    // } else
+    // {
+    //     set_actuators_default_values();
+    //     state = spin;
+    // }
 
-    if(channels[5] < -50)
-    {
-        set_weight_drop(true);
-    } else
-    {
-        set_weight_drop(false);
-    }
+    // if(channels[5] < -50)
+    // {
+    //     set_weight_drop(true);
+    // } else
+    // {
+    //     set_weight_drop(false);
+    // }
 
     // if(weight_detected() && channels[4] < -50) state = pickup_weight;      // Transition state if button is pressed on remote
 
@@ -205,7 +213,7 @@ void pickup_weight_state()
         if(time_since_task_transition > 500)
         {
             current_task = start_task;
-            state = spin;
+            state = start;
         }
         break;
 
