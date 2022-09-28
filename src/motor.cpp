@@ -20,7 +20,7 @@
 
 // --------------- PID Motor Control= Configuration ---------------
 #define KP_LEFT_MOTOR       0.7
-#define KI_LEFT_MOTOR       20
+#define KI_LEFT_MOTOR       10
 #define KD_LEFT_MOTOR       0
 #define TAU_LEFT            0       // Filtering constant for derivative term
 #define CTRL_LEFT_LIM_MIN   -100    // Limit control output to a range 
@@ -30,7 +30,7 @@
 #define INT_LEFT_LIM_MAX    +200
 
 #define KP_RIGHT_MOTOR      0.7
-#define KI_RIGHT_MOTOR      20
+#define KI_RIGHT_MOTOR      10
 #define KD_RIGHT_MOTOR      0
 #define TAU_RIGHT           0
 #define CTRL_RIGHT_LIM_MIN  -100
