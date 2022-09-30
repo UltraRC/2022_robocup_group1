@@ -26,6 +26,8 @@ VL53L1X sensorsL1[L1_sensor_count];
 uint16_t sensor_L0_values[L0_sensor_count];
 uint16_t sensor_L1_values[L1_sensor_count];
 
+uint16_t sensor_values[L0_sensor_count+L1_sensor_count+1];    // +1 because there is an extra LR TOF sensor 
+
 bool is_weight_detected = false;
 // *****************************************************
 
@@ -180,19 +182,22 @@ void update_tof_sensors()
     // Serial.printf("L0_1: %u\t L0_2: %u\t L1_1: %u\t L1_2: %u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1]);
     // Serial.printf("%u\t%u\t%u\t%u\t%u\t%u\t%u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1],sensor_L1_values[2], sensor_L1_values[3], sensor_L1_values[4]);
 
+    sensor_values[(int) right]              = sensor_L0_values[0];
+    sensor_values[(int) front_right_top]    = sensor_L1_values[2];
+    sensor_values[(int) front_right_bottom] = sensor_L1_values[0];
+    sensor_values[(int) left]               = sensor_L0_values[1];
+    sensor_values[(int) front_left_top]     = sensor_L1_values[3];
+    sensor_values[(int) front_left_bottom]  = sensor_L1_values[1];
+    sensor_values[(int) front_top]          = 0;                    // TODO implement code for polling LR TOF sensor
+    sensor_values[(int) front_bottom]       = sensor_L1_values[4];
+}
+
+uint16_t get_sensor_distance(sensor_t sensor)
+{
+    return sensor_values[(int)sensor];
 }
 
 bool weight_detected()
 {
     return is_weight_detected;
-}
-
-uint16_t get_sensor_right(void)
-{
-    return sensor_L0_values[0];
-}
-
-uint16_t get_sensor_front_right(void)
-{
-    return sensor_L1_values[2];
 }

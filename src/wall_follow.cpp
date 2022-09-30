@@ -7,17 +7,17 @@
 
 #define PID_UPDATE_RATE     10000 // [Hz]
 
-#define KP                  50
-#define KI                  0.01
+#define KP                  70
+#define KI                  0.02
 #define KD                  0
 #define TAU                 0
 #define CTRL_LIM_MIN        -1000000
 #define CTRL_LIM_MAX        +1000000
-#define INT_LIM_MIN         -200
-#define INT_LIM_MAX         +200
+#define INT_LIM_MIN         -30000
+#define INT_LIM_MAX         +30000
 
-#define WALL_FOLLOW_DIST    500 // [mm]
-#define WALL_FOLLOW_VEL     19   // [rad/s]
+#define WALL_FOLLOW_DIST    600 // [mm]
+#define WALL_FOLLOW_VEL     20   // [rad/s]
 
 PIDController wall_follow_pid;
 
@@ -45,14 +45,18 @@ void update_wall_follow()
     {
         last_time = micros();                   // Reset timer
 
-        A = alpha*last_A + (1-alpha)*get_sensor_right();
-        B = alpha*last_B + (1-alpha)*get_sensor_front_right()*phi;
+        A = alpha*last_A + (1-alpha)*get_sensor_distance(right);
+        B = alpha*last_B + (1-alpha)*get_sensor_distance(front_right_top)*phi;
 
 
         last_A = A;
         last_B = B;
 
-        measured_wall_distance = (A+B) / 2.0;     // Measure distance from the wall
+        // measured_wall_distance = (A+B) / 2.0;     // Measure distance from the wall
+        // measured_wall_distance = min(A, B);
+        measured_wall_distance = B;
+
+        // measured_wall_distance = min(measured_wall_distance, get_sensor_distance(front_bottom));
 
         // Serial.printf("A: %f, B: %f, phi:%f, distance: %f\n", A, B, phi, measured_wall_distance);
 

@@ -34,6 +34,7 @@ uint64_t time_since_last_state_transition = 0;
 
 void setup()
 {
+    delay(1500);
     // Serial.begin(9600);
     // while(!Serial)
     // {

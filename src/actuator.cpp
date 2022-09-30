@@ -22,7 +22,7 @@ void set_actuators_default_values()
     // set_main_servo_angle((MIN_ANGLE_MAIN + MAX_ANGLE_MAIN) / 2.0);
     set_main_servo_angle(MAX_ANGLE_MAIN+50);
     set_electromag(false);
-    set_pincer_servos_angle(MIN_ANGLE_PINCER);
+    set_pincer_servos_angle(MIN_ANGLE_PINCER-15);
 }
 
 void init_weight_drop(void)
