@@ -7,7 +7,7 @@
 
 #define PID_UPDATE_RATE     10000 // [Hz]
 
-#define KP                  70
+#define KP                  60
 #define KI                  0.02
 #define KD                  0
 #define TAU                 0
@@ -16,7 +16,7 @@
 #define INT_LIM_MIN         -30000
 #define INT_LIM_MAX         +30000
 
-#define WALL_FOLLOW_DIST    600 // [mm]
+#define WALL_FOLLOW_DIST    400 // [mm]
 #define WALL_FOLLOW_VEL     20   // [rad/s]
 
 PIDController wall_follow_pid;
@@ -67,7 +67,7 @@ void update_wall_follow()
         set_motor_velocity_left(WALL_FOLLOW_VEL - control);
         set_motor_velocity_right(WALL_FOLLOW_VEL + control);
 
-        Serial.printf("%f\t%f\n", control, measured_wall_distance);
+        // Serial.printf("%f\t%f\n", control, measured_wall_distance);
     }
 
 }

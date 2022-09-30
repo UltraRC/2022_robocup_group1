@@ -27,7 +27,7 @@ void move_forward_state();
 void state_tracker();
 void update_channels();
 void print_state(state_t state);
-void follow_wall_state();
+void wall_follow_state();
 
 state_t state = start;      // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
@@ -35,7 +35,7 @@ uint64_t time_since_last_state_transition = 0;
 void setup()
 {
     delay(1500);
-    // Serial.begin(9600);
+    Serial.begin(9600);
     // while(!Serial)
     // {
     //     ;       // Wait until serial connection
@@ -72,9 +72,80 @@ void loop()
         move_forward_state();
         break;
     case follow_wall:
-        update_wall_follow();
+        wall_follow_state();
         break;
 
+    default:
+        break;
+    }
+}
+
+void wall_follow_state()
+{
+    int8_t vel = -50;
+    uint16_t time = 200;
+    int8_t turn_vel = -100;
+    uint16_t turn_time = 300;
+    uint16_t wall_distance = 300;
+    uint16_t a = get_sensor_distance(front_bottom);
+
+    typedef enum
+    {
+        start_task = 0,
+        rev, turn
+    } task_t;
+
+    // Serial.printf("Front_bottom_sensor: %u\n", get_sensor_distance(front_bottom));
+
+    static task_t current_task = start_task;
+    static task_t last_task = start_task;
+
+    static uint64_t last_task_transition_time = 0;
+
+    if (current_task != last_task)
+    {
+        last_task = current_task;
+        last_task_transition_time = millis();
+    }
+
+    uint64_t time_since_task_transition = millis() - last_task_transition_time;
+
+    // ------------------- State-machine tasks below ---------------------
+    switch (current_task)
+    {
+    case start_task:
+        update_wall_follow();
+        if(a < wall_distance)
+        {
+            current_task = rev;
+            Serial.printf("wall detected!!, a = %u\n", a);
+        }
+        break;
+    
+    case rev:
+
+        set_motor_velocity_left(vel);
+        set_motor_velocity_right(vel);
+
+        if(time_since_task_transition > time)       // Allows for non-blocking delays
+        {
+            //** Do a thing after waiting for 1-second!! **//
+
+            current_task = turn;  // Reset current_task before changing state
+        }
+        break;
+
+    case turn:
+
+        set_motor_velocity_left(turn_vel);
+        set_motor_velocity_right(-turn_vel);
+
+        if(time_since_task_transition > turn_time)
+        {
+            current_task = start_task;       
+        }
+        break;
+    
     default:
         break;
     }
