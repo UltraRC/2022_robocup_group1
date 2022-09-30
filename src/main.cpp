@@ -82,12 +82,11 @@ void loop()
 
 void wall_follow_state()
 {
-    int8_t vel = -50;
-    uint16_t time = 200;
+    int8_t reverse_velocity = -50;
+    uint16_t reverse_time = 300;
     int8_t turn_vel = -100;
-    uint16_t turn_time = 300;
+    uint16_t turn_time = 500;
     uint16_t wall_distance = 300;
-    uint16_t a = get_sensor_distance(front_bottom);
 
     typedef enum
     {
@@ -115,22 +114,19 @@ void wall_follow_state()
     {
     case start_task:
         update_wall_follow();
-        if(a < wall_distance)
+        if(get_sensor_distance(front_bottom) < wall_distance)
         {
             current_task = rev;
-            Serial.printf("wall detected!!, a = %u\n", a);
         }
         break;
     
     case rev:
 
-        set_motor_velocity_left(vel);
-        set_motor_velocity_right(vel);
+        set_motor_velocity_left(reverse_velocity);
+        set_motor_velocity_right(reverse_velocity);
 
-        if(time_since_task_transition > time)       // Allows for non-blocking delays
+        if(time_since_task_transition > reverse_time)
         {
-            //** Do a thing after waiting for 1-second!! **//
-
             current_task = turn;  // Reset current_task before changing state
         }
         break;

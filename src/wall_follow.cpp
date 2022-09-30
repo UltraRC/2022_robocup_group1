@@ -16,8 +16,9 @@
 #define INT_LIM_MIN         -30000
 #define INT_LIM_MAX         +30000
 
-#define WALL_FOLLOW_DIST    400 // [mm]
-#define WALL_FOLLOW_VEL     20   // [rad/s]
+// #define WALL_FOLLOW_DIST    400 // [mm]
+int16_t WALL_FOLLOW_DIST = 0;
+#define WALL_FOLLOW_VEL     30   // [rad/s]
 
 PIDController wall_follow_pid;
 
@@ -29,6 +30,8 @@ void init_wall_follow()
 
 void update_wall_follow()
 {
+    WALL_FOLLOW_DIST = 450 + 200*sin(millis()/500.0);
+
     static uint64_t last_time = 0;
     int64_t delta_time;
     delta_time = micros()-last_time;
@@ -53,7 +56,7 @@ void update_wall_follow()
         last_B = B;
 
         // measured_wall_distance = (A+B) / 2.0;     // Measure distance from the wall
-        // measured_wall_distance = min(A, B);
+        // measured_wall_distance = A;
         measured_wall_distance = B;
 
         // measured_wall_distance = min(measured_wall_distance, get_sensor_distance(front_bottom));
