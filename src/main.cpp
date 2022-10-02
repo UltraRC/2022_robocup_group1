@@ -87,6 +87,7 @@ void wall_follow_state()
     int8_t turn_vel = -100;
     uint16_t turn_time = 500;
     uint16_t wall_distance = 300;
+    side_t what_wall = left_wall;
 
     typedef enum
     {
@@ -113,7 +114,7 @@ void wall_follow_state()
     switch (current_task)
     {
     case start_task:
-        update_wall_follow();
+        update_wall_follow(what_wall);
         if(get_sensor_distance(front_bottom) < wall_distance)
         {
             current_task = rev;
@@ -133,8 +134,8 @@ void wall_follow_state()
 
     case turn:
 
-        set_motor_velocity_left(turn_vel);
-        set_motor_velocity_right(-turn_vel);
+        set_motor_velocity_left(turn_vel * what_wall);
+        set_motor_velocity_right(-turn_vel * what_wall);
 
         if(time_since_task_transition > turn_time)
         {

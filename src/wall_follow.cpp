@@ -28,9 +28,15 @@ void init_wall_follow()
     PIDController_Init(&wall_follow_pid);
 }
 
-void update_wall_follow()
+void update_wall_follow(side_t side)
 {
-    WALL_FOLLOW_DIST = 450 + 200*sin(millis()/500.0);
+    sensor_t sensor = front_right_top;
+    if(side == left_wall) {
+        sensor = front_left_top;
+    }
+
+    //WALL_FOLLOW_DIST = 450 + 200*sin(millis()/500.0);
+    WALL_FOLLOW_DIST = 500;
 
     static uint64_t last_time = 0;
     int64_t delta_time;
@@ -49,7 +55,7 @@ void update_wall_follow()
         last_time = micros();                   // Reset timer
 
         A = alpha*last_A + (1-alpha)*get_sensor_distance(right);
-        B = alpha*last_B + (1-alpha)*get_sensor_distance(front_right_top)*phi;
+        B = alpha*last_B + (1-alpha)*get_sensor_distance(sensor)*phi;
 
 
         last_A = A;
@@ -67,8 +73,8 @@ void update_wall_follow()
 
         control /= 1000;
 
-        set_motor_velocity_left(WALL_FOLLOW_VEL - control);
-        set_motor_velocity_right(WALL_FOLLOW_VEL + control);
+        set_motor_velocity_left(WALL_FOLLOW_VEL - control * side);
+        set_motor_velocity_right(WALL_FOLLOW_VEL + control * side);
 
         // Serial.printf("%f\t%f\n", control, measured_wall_distance);
     }
