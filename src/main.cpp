@@ -124,9 +124,9 @@ void wall_follow_state()
             state = pickup_weight;
         } else if (is_centre_weight_detected()) {
             state = approach_weight;
-        } else if (is_left_weight_detected) {
+        } else if (is_left_weight_detected()) {
             state = face_weight_left;
-        } else if (is_right_weight_detected) {
+        } else if (is_right_weight_detected()) {
             state = face_weight_right;
         }
         if(get_sensor_distance(front_bottom) < wall_distance)
