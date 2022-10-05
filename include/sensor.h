@@ -17,8 +17,19 @@ void update_sensors(void);
 
 void init_tof_sensors(void);
 void update_tof_sensors(void);
-bool weight_detected(void);
+void update_weight_distances(void);
 
 uint16_t get_sensor_distance(sensor_t sensor);
+
+bool is_right_weight_detected(void);
+
+
+bool is_left_weight_detected(void);
+
+
+bool is_centre_weight_detected(void);
+
+bool is_weight_in_range(void);
+
 
 #endif // SENSOR_H

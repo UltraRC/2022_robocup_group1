@@ -28,7 +28,12 @@ uint16_t sensor_L1_values[L1_sensor_count];
 
 uint16_t sensor_values[L0_sensor_count+L1_sensor_count+1];    // +1 because there is an extra LR TOF sensor 
 
-bool is_weight_detected = false;
+bool weight_in_range = false;
+bool right_weight_detected = false;
+bool left_weight_detected = false;
+bool centre_weight_detected = false;
+
+
 // *****************************************************
 
 void init_sensors()
@@ -43,7 +48,34 @@ void update_sensors(void)
     if(millis()-last_time > 65)
     {
         update_tof_sensors();
+        update_weight_distances();
         last_time = millis();
+    }
+}
+
+void update_weight_distances() 
+{
+    //centre
+    if (get_sensor_distance(front_bottom) < get_sensor_distance(front_top) - 100) {
+        centre_weight_detected = true;
+        if (get_sensor_distance(front_bottom) < 200) {
+            weight_in_range = true;
+        }
+    } else {
+        centre_weight_detected = false;
+        weight_in_range = false;
+    }
+    //left
+    if (get_sensor_distance(front_left_bottom) < get_sensor_distance(front_left_top) - 100) {
+        left_weight_detected = true;
+    } else {
+        left_weight_detected = false;
+    }
+    //right
+    if (get_sensor_distance(front_right_bottom) < get_sensor_distance(front_right_top)) {
+        right_weight_detected = true;
+    } else {
+        right_weight_detected = false;
     }
 }
 
@@ -197,7 +229,23 @@ uint16_t get_sensor_distance(sensor_t sensor)
     return sensor_values[(int)sensor];
 }
 
-bool weight_detected()
+
+bool is_right_weight_detected()
 {
-    return is_weight_detected;
+    return right_weight_detected;
+}
+
+bool is_left_weight_detected()
+{
+    return left_weight_detected;
+}
+
+bool is_centre_weight_detected()
+{
+    return centre_weight_detected;
+}
+
+bool is_weight_in_range()
+{
+    return weight_in_range;
 }
