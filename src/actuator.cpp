@@ -60,6 +60,12 @@ void init_rear_servo()
 void init_electromag()
 {
     pinMode(ELECTROMAG_PIN, OUTPUT);
+    pinMode(FR_ELECTROMAG_PIN, OUTPUT);
+}
+
+void set_front_electromag(boolean set)
+{
+    digitalWrite(FR_ELECTROMAG_PIN, set);
 }
 
 void set_electromag(boolean set)

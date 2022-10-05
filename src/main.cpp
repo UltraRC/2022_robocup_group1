@@ -230,6 +230,7 @@ void pickup_weight_state()
 
     case task2:                                 // Close then open pincers
         set_pincer_servos_angle(MAX_ANGLE_PINCER);
+        set_front_electromag(true);             // Turn on front electromag
         set_motor_velocity_left(-15);
         set_motor_velocity_right(-15);
         if (time_since_task_transition > 1000)
@@ -256,6 +257,7 @@ void pickup_weight_state()
 
     case task4:                                 // Turn on electro-magnet, and lower main-servo
         set_electromag(true);
+        set_front_electromag(false);             // Turn off front electromag
         set_main_servo_angle(MAX_ANGLE_MAIN);
         set_pincer_servos_angle(MIN_ANGLE_PINCER);
         if (time_since_task_transition > 450)
