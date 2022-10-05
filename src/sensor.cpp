@@ -12,10 +12,10 @@
 #define VL53L1X_ADDRESS_START 0x35
 
 const uint8_t L0_sensor_count = 2;
-const uint8_t L1_sensor_count = 5;
+const uint8_t L1_sensor_count = 6;
 
 const uint8_t xshutPinsL0[8] = {0, 1};
-const uint8_t xshutPinsL1[8] = {2, 3, 4, 5, 6};
+const uint8_t xshutPinsL1[8] = {2, 3, 4, 5, 6, 7};
 
 const byte SX1509_ADDRESS = 0x3F;       // Adress for io-expander
 SX1509 io;                              // Create an SX1509 object to be used throughout
@@ -56,7 +56,7 @@ void update_sensors(void)
 void update_weight_distances() 
 {
     //centre
-    if (get_sensor_distance(front_bottom) < get_sensor_distance(front_top) - 100) {
+    if (get_sensor_distance(front_bottom) < get_sensor_distance(front_top) - 200) {
         centre_weight_detected = true;
         if (get_sensor_distance(front_bottom) < 200) {
             weight_in_range = true;
@@ -66,13 +66,13 @@ void update_weight_distances()
         weight_in_range = false;
     }
     //left
-    if (get_sensor_distance(front_left_bottom) < get_sensor_distance(front_left_top) - 100) {
+    if (get_sensor_distance(front_left_bottom) < get_sensor_distance(front_left_top) - 200) {
         left_weight_detected = true;
     } else {
         left_weight_detected = false;
     }
     //right
-    if (get_sensor_distance(front_right_bottom) < get_sensor_distance(front_right_top)) {
+    if (get_sensor_distance(front_right_bottom) < get_sensor_distance(front_right_top) - 200) {
         right_weight_detected = true;
     } else {
         right_weight_detected = false;
@@ -215,13 +215,14 @@ void update_tof_sensors()
     // Serial.printf("%u\t%u\t%u\t%u\t%u\t%u\t%u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1],sensor_L1_values[2], sensor_L1_values[3], sensor_L1_values[4]);
 
     sensor_values[(int) right]              = sensor_L0_values[0];
-    sensor_values[(int) front_right_top]    = sensor_L1_values[2];
-    sensor_values[(int) front_right_bottom] = sensor_L1_values[0];
     sensor_values[(int) left]               = sensor_L0_values[1];
-    sensor_values[(int) front_left_top]     = sensor_L1_values[3];
+
+    sensor_values[(int) front_right_bottom] = sensor_L1_values[0];
     sensor_values[(int) front_left_bottom]  = sensor_L1_values[1];
-    sensor_values[(int) front_top]          = 0;                    // TODO implement code for polling LR TOF sensor
+    sensor_values[(int) front_right_top]    = sensor_L1_values[2];
+    sensor_values[(int) front_left_top]     = sensor_L1_values[3];
     sensor_values[(int) front_bottom]       = sensor_L1_values[4];
+    sensor_values[(int) front_top]          = sensor_L1_values[5];                    // TODO implement code for polling LR TOF sensor
 }
 
 uint16_t get_sensor_distance(sensor_t sensor)

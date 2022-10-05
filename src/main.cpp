@@ -91,7 +91,7 @@ void wall_follow_state()
     uint16_t reverse_time = 300;
     int8_t turn_vel = -100;
     uint16_t turn_time = 500;
-    uint16_t wall_distance = 300;
+    uint16_t wall_distance = 370;
     side_t what_wall = left_wall;
 
     typedef enum
@@ -128,8 +128,7 @@ void wall_follow_state()
             state = face_weight_left;
         } else if (is_right_weight_detected()) {
             state = face_weight_right;
-        }
-        if(get_sensor_distance(front_bottom) < wall_distance)
+        } else if (get_sensor_distance(front_top) < wall_distance)
         {
             current_task = rev;
         }
