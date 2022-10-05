@@ -31,6 +31,7 @@ double velocity_right =         0;
 
 void init_encoder()
 {   
+    // TODO remove these two lines?
     pinMode(49, OUTPUT);                                    // Pin 49 is used to enable IO power
     digitalWrite(49, 1);                                    // Enable IO power on main CPU board
 
@@ -56,20 +57,17 @@ void calc_encoder_velocty()
 
     last_calc_time = micros();
 
-
     velocity_left = MICROSECONDS_PER_SECOND * (encoderPos1 - last_position_left)  / delta_calc_time;
     velocity_right = MICROSECONDS_PER_SECOND * (encoderPos2 - last_position_right) / delta_calc_time;
     
     last_position_left = encoderPos1;
     last_position_right = encoderPos2;
     
-    //Serial.printf("V_left: %.3f\n", velocity_left);
-
     velocity_left  *= 2*PI / 663.0; // Convert to rad/s
     velocity_right *= 2*PI / 663.0;
 }
 
-void update_endoder()
+void update_encoder()
 {
     calc_encoder_velocty();
 }

@@ -5,9 +5,9 @@
 #include <SparkFunSX1509.h>
 #include "sensor.h"
 
-/*******************************************************
- ***************** TOF - SENSOR CONFIG *****************
- *******************************************************/
+#define SENSOR_UPDATE_PERIOD 65         // [ms]
+
+ // ****** TOF - SENSOR CONFIG ******
 #define VL53L0X_ADDRESS_START 0x30      // Addresses to start indexing sensor addresses
 #define VL53L1X_ADDRESS_START 0x35
 
@@ -20,21 +20,19 @@ const uint8_t xshutPinsL1[8] = {2, 3, 4, 5, 6, 7};
 const byte SX1509_ADDRESS = 0x3F;       // Adress for io-expander
 SX1509 io;                              // Create an SX1509 object to be used throughout
 
-VL53L0X sensorsL0[L0_sensor_count];
+VL53L0X sensorsL0[L0_sensor_count];     // Arrays of sensor objects
 VL53L1X sensorsL1[L1_sensor_count];
 
-uint16_t sensor_L0_values[L0_sensor_count];
+uint16_t sensor_L0_values[L0_sensor_count]; // Arrays of sensor measurments
 uint16_t sensor_L1_values[L1_sensor_count];
 
-uint16_t sensor_values[L0_sensor_count+L1_sensor_count+1];    // +1 because there is an extra LR TOF sensor 
+uint16_t sensor_values[L0_sensor_count+L1_sensor_count]; // TODO this number used to be +1
 
+// ****** Weight pickup variables ******
 bool weight_in_range = false;
 bool right_weight_detected = false;
 bool left_weight_detected = false;
 bool centre_weight_detected = false;
-
-
-// *****************************************************
 
 void init_sensors()
 {
@@ -45,11 +43,11 @@ void update_sensors(void)
 {
     static uint64_t last_time = 0;
 
-    if(millis()-last_time > 65)
+    if(millis()-last_time > SENSOR_UPDATE_PERIOD)
     {
+        last_time = millis();
         update_tof_sensors();
         update_weight_distances();
-        last_time = millis();
     }
 }
 
@@ -133,7 +131,7 @@ void init_tof_sensors()
         // the default). To make it simple, we'll just count up from 0x2A.
         sensorsL0[i].setAddress(VL53L0X_ADDRESS_START + i);
 
-        sensorsL0[i].startContinuous(20);
+        sensorsL0[i].startContinuous(20);   // TODO potentially change this number
     }
 
     // L1 Enable, initialize, and start each sensor, one by one.
@@ -160,7 +158,7 @@ void init_tof_sensors()
         // the default). To make it simple, we'll just count up from 0x2A.
         sensorsL1[i].setAddress(VL53L1X_ADDRESS_START + i);
 
-        sensorsL1[i].startContinuous(20);
+        sensorsL1[i].startContinuous(20);   // TODO potentially change this number
     }
 }
 
@@ -168,7 +166,7 @@ void update_tof_sensors()
 {
     for (uint8_t i = 0; i < L0_sensor_count; i++)
     {
-        sensor_L0_values[i] = sensorsL0[i].readRangeSingleMillimeters();
+        sensor_L0_values[i] = sensorsL0[i].readRangeSingleMillimeters();    // TODO should this be continuous?
         if (sensorsL0[i].timeoutOccurred()) Serial.println(" TIMEOUT");
     }
 
@@ -183,9 +181,6 @@ void update_tof_sensors()
 
     // double L0X_sample = sensorsL0[0].readRangeContinuousMillimeters();
     // double L1X_sample = sensorsL1[0].readRangeContinuousMillimeters();
-
-    // // double L0X_sample = sensorsL0[0].readRangeSingleMillimeters();
-    // // double L1X_sample = sensorsL1[0].readRangeSingleMillimeters();
 
     // L0X_sample = L0X_sample > VL53L0X_max_distance ? VL53L0X_max_distance : L0X_sample;
 
@@ -207,12 +202,6 @@ void update_tof_sensors()
     // {
     //     is_weight_detected = false;
     // }
-    
-
-    // Serial.printf("%f\t%f\t%f\n", L0X_sample, L1X_sample, L1X_sample-L0X_sample);
-    
-    // Serial.printf("L0_1: %u\t L0_2: %u\t L1_1: %u\t L1_2: %u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1]);
-    // Serial.printf("%u\t%u\t%u\t%u\t%u\t%u\t%u\n", sensor_L0_values[0],sensor_L0_values[1],sensor_L1_values[0],sensor_L1_values[1],sensor_L1_values[2], sensor_L1_values[3], sensor_L1_values[4]);
 
     sensor_values[(int) right]              = sensor_L0_values[0];
     sensor_values[(int) left]               = sensor_L0_values[1];

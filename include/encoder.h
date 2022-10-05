@@ -8,7 +8,7 @@ void calc_encoder_velocty();
 void controller();
 
 void init_encoder();
-void update_endoder();
+void update_encoder();
 
 double get_velocity_left();
 double get_velocity_right();

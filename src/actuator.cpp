@@ -2,24 +2,35 @@
 #include "actuator.h"
 #include <Servo.h>
 
+#define MAIN_SERVO_PIN      32
+#define P_SERVO_LEFT_PIN    30
+#define P_SERVO_RIGHT_PIN   31
+
+#define ELECTROMAG_PIN      14      // A0  - CON68
+#define FR_ELECTROMAG_PIN   26      // A12 - CON74
+#define WEIGHT_DROP_PIN     24      // A10 - CON72
+
 Servo main_servo;
 Servo pincer_servo_left;
 Servo pincer_servo_right;
-Servo rear_servo;
 
 void init_actuators()
 {
-    init_main_servo();
-    init_pincer_servos();
-    init_rear_servo();
+    init_servos();
     init_electromag();
     init_weight_drop();
     set_actuators_default_values();
 }
 
+void init_servos()
+{
+    main_servo.attach(MAIN_SERVO_PIN);
+    pincer_servo_left.attach(P_SERVO_LEFT_PIN);
+    pincer_servo_right.attach(P_SERVO_RIGHT_PIN);
+}
+
 void set_actuators_default_values()
 {
-    // set_main_servo_angle((MIN_ANGLE_MAIN + MAX_ANGLE_MAIN) / 2.0);
     set_main_servo_angle(MAX_ANGLE_MAIN+50);
     set_electromag(false);
     set_pincer_servos_angle(MIN_ANGLE_PINCER-15);
@@ -30,31 +41,15 @@ void init_weight_drop(void)
     pinMode(WEIGHT_DROP_PIN, OUTPUT);
 }
 
-void init_main_servo()
-{
-    main_servo.attach(MAIN_SERVO_PIN);
-}
-
 void set_main_servo_angle(int32_t angle)
 {
     main_servo.write(90 + angle);
-}
-
-void init_pincer_servos()
-{
-    pincer_servo_left.attach(P_SERVO_LEFT_PIN);
-    pincer_servo_right.attach(P_SERVO_RIGHT_PIN);
 }
 
 void set_pincer_servos_angle(int32_t angle)
 {
     pincer_servo_left.write(90 + angle);
     pincer_servo_right.write(90 - angle);
-}
-
-void init_rear_servo()
-{
-    rear_servo.attach(REAR_SERVO_PIN);
 }
 
 void init_electromag()
@@ -70,14 +65,7 @@ void set_front_electromag(boolean set)
 
 void set_electromag(boolean set)
 {
-    if (set)
-    {
-        digitalWrite(ELECTROMAG_PIN, HIGH);
-    }
-    else
-    {
-        digitalWrite(ELECTROMAG_PIN, LOW);
-    }
+    digitalWrite(ELECTROMAG_PIN, set);
 }
 
 void set_weight_drop(boolean set)

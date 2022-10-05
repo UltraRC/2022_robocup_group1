@@ -9,12 +9,12 @@
 
 #define MAX_VELOCITY 55 // Rad/s
 
-// ******* Uncomment macros to enable features *******
 
 // --------------- Motor Configuration ---------------
 #define L_SERVO_PIN 0
 #define R_SERVO_PIN 1
 
+// ******* Uncomment macros to enable macros *******
 //#define LEFT_MOTOR_REVERSE
 #define RIGHT_MOTOR_REVERSE
 
@@ -25,7 +25,6 @@
 #define TAU_LEFT            0       // Filtering constant for derivative term
 #define CTRL_LEFT_LIM_MIN   -100    // Limit control output to a range 
 #define CTRL_LEFT_LIM_MAX   +100 
-
 #define INT_LEFT_LIM_MIN    -200    // Limit integrator to range to avoid wind-up
 #define INT_LEFT_LIM_MAX    +200
 
@@ -38,7 +37,7 @@
 #define INT_RIGHT_LIM_MIN   -200
 #define INT_RIGHT_LIM_MAX   +200
 
-#define COTRL_SMPL_PERIOD   5000   // 10 milli-seconds (200 Hz)
+#define COTRL_SMPL_PERIOD   5000   // (200 Hz) TODO Maybe reduce this? It is very high
 
 PWMServo left_motor;
 PWMServo right_motor;
@@ -46,7 +45,7 @@ PWMServo right_motor;
 PIDController pid_left_motor;
 PIDController pid_right_motor;
 
-double left_velocity_set;
+double left_velocity_set;       // Target velocity
 double right_velocity_set;
 
 void init_motors()
@@ -111,17 +110,14 @@ void update_motors()
     {
         last_time = micros();       // Reset timer
         
-        update_endoder();
+        update_encoder();
 
         velocity_left = get_velocity_left();
         velocity_right = get_velocity_right();
 
-        float control_left = PIDController_Update(&pid_left_motor,  left_velocity_set, velocity_left);
+        float control_left  = PIDController_Update(&pid_left_motor,  left_velocity_set,  velocity_left);
         float control_right = PIDController_Update(&pid_right_motor, right_velocity_set, velocity_right);
-
-        //Serial.printf("Veclocity: %.3f,\tError: %.3f,\tcum_error: %.3f,\tControl: %.3f\n", velocity_right, pid_right_motor.prevError, pid_right_motor.integrator, control_right);
-        //Serial.printf("%f %f %f\n", velocity_left, left_velocity_set, control_left);
-        
+      
         set_motor_power_left(control_left);
         set_motor_power_right(control_right);
     }

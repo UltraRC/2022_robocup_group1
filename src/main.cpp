@@ -31,7 +31,7 @@ void update_channels();
 void print_state(state_t state);
 void wall_follow_state();
 
-state_t state = start;      // System state variable. E.g. Weight-collection state, navigation state.
+state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 
 void setup()
@@ -53,9 +53,9 @@ void setup()
 void loop()
 {
     update_sensors();
-    state_tracker();        // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
-    update_channels();      // Updates the array of channel values from the remote control
-    update_motors();        // Runs the PID loop using the encoders and controls the speed of the motors
+    state_tracker();   // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
+    update_channels(); // Updates the array of channel values from the remote control
+    update_motors();   // Runs the PID loop using the encoders and controls the speed of the motors
 
     switch (state)
     {
@@ -67,15 +67,19 @@ void loop()
     case pickup_weight:
         pickup_weight_state();
         break;
+
     case approach_weight:
         approach_weight_state();
         break;
+
     case face_weight_right:
         face_weight_right_state();
         break;
+
     case face_weight_left:
         face_weight_left_state();
         break;
+
     case follow_wall:
         wall_follow_state();
         break;
@@ -97,7 +101,8 @@ void wall_follow_state()
     typedef enum
     {
         start_task = 0,
-        rev, turn
+        rev,
+        turn
     } task_t;
 
     // Serial.printf("Front_bottom_sensor: %u\n", get_sensor_distance(front_bottom));
@@ -120,42 +125,48 @@ void wall_follow_state()
     {
     case start_task:
         update_wall_follow(what_wall);
-        if (is_weight_in_range()) {
+        if (is_weight_in_range())
+        {
             state = pickup_weight;
-        } else if (is_centre_weight_detected()) {
+        }
+        else if (is_centre_weight_detected())
+        {
             state = approach_weight;
-        } else if (is_left_weight_detected()) {
+        }
+        else if (is_left_weight_detected())
+        {
             state = face_weight_left;
-        } else if (is_right_weight_detected()) {
+        }
+        else if (is_right_weight_detected())
+        {
             state = face_weight_right;
-        } else if (get_sensor_distance(front_top) < wall_distance)
+        }
+        else if (get_sensor_distance(front_top) < wall_distance)
         {
             current_task = rev;
         }
         break;
-    
-    case rev:
 
+    case rev:
         set_motor_velocity_left(reverse_velocity);
         set_motor_velocity_right(reverse_velocity);
 
-        if(time_since_task_transition > reverse_time)
+        if (time_since_task_transition > reverse_time)
         {
-            current_task = turn;  // Reset current_task before changing state
+            current_task = turn; // Reset current_task before changing state
         }
         break;
 
     case turn:
-
         set_motor_velocity_left(turn_vel * what_wall);
         set_motor_velocity_right(-turn_vel * what_wall);
 
-        if(time_since_task_transition > turn_time)
+        if (time_since_task_transition > turn_time)
         {
-            current_task = start_task;       
+            current_task = start_task;
         }
         break;
-    
+
     default:
         break;
     }
@@ -225,12 +236,12 @@ void pickup_weight_state()
     // ------------------- State-machine tasks below ---------------------
     switch (current_task)
     {
-    case start_task:                            // Default task
+    case start_task: // Default task
         // set_pincer_servos_angle(MIN_ANGLE_PINCER);
         current_task = task1;
         break;
 
-    case task1:                                 // Move fowards
+    case task1: // Move fowards
         set_motor_velocity_left(17);
         set_motor_velocity_right(17);
         if (time_since_task_transition > 1300)
@@ -241,14 +252,14 @@ void pickup_weight_state()
         }
         break;
 
-    case task2:                                 // Close then open pincers
+    case task2: // Close then open pincers
         set_pincer_servos_angle(MAX_ANGLE_PINCER);
-        set_front_electromag(true);             // Turn on front electromag
+        set_front_electromag(true); // Turn on front electromag
         set_motor_velocity_left(-15);
         set_motor_velocity_right(-15);
         if (time_since_task_transition > 1000)
         {
-            set_main_servo_angle(MAX_ANGLE_MAIN+12);
+            set_main_servo_angle(MAX_ANGLE_MAIN + 12);
             set_pincer_servos_angle(MIN_ANGLE_PINCER);
             set_motor_velocity_left(0);
             set_motor_velocity_right(0);
@@ -256,7 +267,7 @@ void pickup_weight_state()
         }
         break;
 
-    case task3:                                 // Move fowards, slowly
+    case task3: // Move fowards, slowly
         set_motor_velocity_left(10);
         set_motor_velocity_right(10);
         if (time_since_task_transition > 1700)
@@ -268,9 +279,9 @@ void pickup_weight_state()
         }
         break;
 
-    case task4:                                 // Turn on electro-magnet, and lower main-servo
+    case task4: // Turn on electro-magnet, and lower main-servo
         set_electromag(true);
-        set_front_electromag(false);             // Turn off front electromag
+        set_front_electromag(false); // Turn off front electromag
         set_main_servo_angle(MAX_ANGLE_MAIN);
         set_pincer_servos_angle(MIN_ANGLE_PINCER);
         if (time_since_task_transition > 450)
@@ -280,7 +291,7 @@ void pickup_weight_state()
         }
         break;
 
-    case task5:                                 // Drop weight on the ramp and move backwards
+    case task5: // Drop weight on the ramp and move backwards
         set_motor_velocity_left(-10);
         set_motor_velocity_right(-10);
         if (time_since_task_transition > 1500)
@@ -294,7 +305,7 @@ void pickup_weight_state()
 
     case task6:
         set_actuators_default_values();
-        if(time_since_task_transition > 500)
+        if (time_since_task_transition > 500)
         {
             current_task = start_task;
             state = start;
@@ -305,7 +316,6 @@ void pickup_weight_state()
         break;
     }
 }
-
 
 void approach_weight_state()
 {
@@ -335,28 +345,33 @@ void approach_weight_state()
     case start_task:
         current_task = task1;
         break;
-    
+
     case task1:
         //** Some initilization code!! **//
-        if (is_centre_weight_detected()) 
+        // TODO To pick a weight up, this code relies on the front sensors constantly detecting the weights
+        // If at any time they stop detecting weights then it gives up and moves to the "start_state"
+        // This is a problem
+        if (is_centre_weight_detected())
         {
             set_motor_velocity_left(17);
             set_motor_velocity_right(17);
-            if (is_weight_in_range()) 
+            if (is_weight_in_range())
             {
                 state = pickup_weight;
             }
-        } else {
-            current_task = start_task;  // Reset current_task before changing state
-            state = start;   
         }
-        if (time_since_task_transition > 5000)       // Allows for non-blocking delays
+        else
         {
-            current_task = start_task;  // Reset current_task before changing state
-            state = start;              // Change state
+            current_task = start_task; // Reset current_task before changing state
+            state = start;
+        }
+        if (time_since_task_transition > 5000) // Allows for non-blocking delays
+        {
+            current_task = start_task; // Reset current_task before changing state
+            state = start;             // Change state
         }
         break;
-    
+
     default:
         break;
     }
@@ -390,23 +405,23 @@ void face_weight_right_state()
     case start_task:
         current_task = task1;
         break;
-    
+
     case task1:
         //** Some initilization code!! **//
         set_motor_velocity_left(17);
         set_motor_velocity_right(-17);
-        if (is_centre_weight_detected()) 
+        if (is_centre_weight_detected())
         {
             current_task = start_task;
             state = approach_weight;
         }
-        if(time_since_task_transition > 3000)       // Allows for non-blocking delays
+        if (time_since_task_transition > 3000) // Allows for non-blocking delays
         {
-            current_task = start_task;  // Reset current_task before changing state
-            state = start;              // Change state
+            current_task = start_task; // Reset current_task before changing state
+            state = start;             // Change state
         }
         break;
-    
+
     default:
         break;
     }
@@ -440,29 +455,27 @@ void face_weight_left_state()
     case start_task:
         current_task = task1;
         break;
-    
+
     case task1:
         //** Some initilization code!! **//
         set_motor_velocity_left(-17);
         set_motor_velocity_right(17);
-        if (is_centre_weight_detected()) 
+        if (is_centre_weight_detected())
         {
             current_task = start_task;
             state = approach_weight;
         }
-        if(time_since_task_transition > 3000)       // Allows for non-blocking delays
+        if (time_since_task_transition > 3000) // Allows for non-blocking delays
         {
-            current_task = start_task;  // Reset current_task before changing state
-            state = start;              // Change state
+            current_task = start_task; // Reset current_task before changing state
+            state = start;             // Change state
         }
         break;
-    
+
     default:
         break;
     }
 }
-
-
 
 void generic_state()
 {
@@ -492,19 +505,19 @@ void generic_state()
     case start_task:
         current_task = task1;
         break;
-    
+
     case task1:
         //** Some initilization code!! **//
 
-        if(time_since_task_transition > 1000)       // Allows for non-blocking delays
+        if (time_since_task_transition > 1000) // Allows for non-blocking delays
         {
             //** Do a thing after waiting for 1-second!! **//
 
-            current_task = start_task;  // Reset current_task before changing state
-            state = start;              // Change state
+            current_task = start_task; // Reset current_task before changing state
+            state = start;             // Change state
         }
         break;
-    
+
     default:
         break;
     }
@@ -519,7 +532,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        print_state(state);          // Print the current state
+        print_state(state); // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }
@@ -561,7 +574,7 @@ void print_state(state_t state)
     case approach_weight:
         Serial.printf("state is: \"approach_weight\"\n");
         break;
-    
+
     default:
         break;
     }
