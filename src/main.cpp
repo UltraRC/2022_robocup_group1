@@ -42,7 +42,7 @@ void setup()
     // {
     //     ;       // Wait until serial connection
     // }
-    // Serial.printf("Serial initiated!!\n\n");
+    Serial.printf("Serial initiated!!\n\n");
 
     init_motors();
     init_actuators();
@@ -397,6 +397,7 @@ void face_weight_right_state()
         set_motor_velocity_right(-17);
         if (is_centre_weight_detected()) 
         {
+            current_task = start_task;
             state = approach_weight;
         }
         if(time_since_task_transition > 3000)       // Allows for non-blocking delays
@@ -446,6 +447,7 @@ void face_weight_left_state()
         set_motor_velocity_right(17);
         if (is_centre_weight_detected()) 
         {
+            current_task = start_task;
             state = approach_weight;
         }
         if(time_since_task_transition > 3000)       // Allows for non-blocking delays
@@ -517,7 +519,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        // print_state(state);          // Print the current state
+        print_state(state);          // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }
@@ -542,6 +544,22 @@ void print_state(state_t state)
         break;
     case pickup_weight:
         Serial.printf("state is: \"pickup weight\"\n");
+        break;
+
+    case follow_wall:
+        Serial.printf("state is: \"follow_wall\"\n");
+        break;
+
+    case face_weight_left:
+        Serial.printf("state is: \"face_weight_left\"\n");
+        break;
+
+    case face_weight_right:
+        Serial.printf("state is: \"face_weight_right\"\n");
+        break;
+
+    case approach_weight:
+        Serial.printf("state is: \"approach_weight\"\n");
         break;
     
     default:

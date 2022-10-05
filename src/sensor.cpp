@@ -56,7 +56,7 @@ void update_sensors(void)
 void update_weight_distances() 
 {
     //centre
-    if (get_sensor_distance(front_bottom) < get_sensor_distance(front_top) - 200) {
+    if (get_sensor_distance(front_bottom) < get_sensor_distance(front_top) - 250 && get_sensor_distance(front_bottom) < 1000) {
         centre_weight_detected = true;
         if (get_sensor_distance(front_bottom) < 200) {
             weight_in_range = true;
@@ -66,13 +66,13 @@ void update_weight_distances()
         weight_in_range = false;
     }
     //left
-    if (get_sensor_distance(front_left_bottom) < get_sensor_distance(front_left_top) - 200) {
+    if (get_sensor_distance(front_left_bottom) < get_sensor_distance(front_left_top) - 250 && get_sensor_distance(front_left_bottom) < 1000) {
         left_weight_detected = true;
     } else {
         left_weight_detected = false;
     }
     //right
-    if (get_sensor_distance(front_right_bottom) < get_sensor_distance(front_right_top) - 200) {
+    if (get_sensor_distance(front_right_bottom) < get_sensor_distance(front_right_top) - 250 && get_sensor_distance(front_right_bottom) < 1000) {
         right_weight_detected = true;
     } else {
         right_weight_detected = false;
