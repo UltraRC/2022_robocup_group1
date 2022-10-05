@@ -6,8 +6,9 @@
     #define P_SERVO_RIGHT_PIN   31
     #define REAR_SERVO_PIN      33
 
-    #define ELECTROMAG_PIN      14
-    #define WEIGHT_DROP_PIN     24
+    #define ELECTROMAG_PIN      14      // A0  - CON68
+    #define FR_ELECTROMAG_PIN   26      // A12 - CON74
+    #define WEIGHT_DROP_PIN     24      // A10 - CON72
 
     #define MIN_ANGLE_PINCER    +80
     #define MAX_ANGLE_PINCER    -5
@@ -25,6 +26,7 @@
 
     void set_main_servo_angle(int32_t angle);
     void set_electromag(boolean input);
+    void set_front_electromag(boolean set);
     void set_pincer_servos_angle(int32_t angle);
     void set_rear_servo_angle(int32_t angle);
     void set_weight_drop(boolean set);
