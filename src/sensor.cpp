@@ -29,8 +29,6 @@ uint16_t sensor_L1_values[L1_sensor_count];
 uint16_t sensor_values[L0_sensor_count+L1_sensor_count]; // TODO this number used to be +1
 
 // ****** Weight pickup variables ******
-#define NUM_WEIGHT_DETECTION_DIRECTIONS 3
-
 bool weight_in_range = false;
 bool right_weight_detected = false;
 bool left_weight_detected = false;

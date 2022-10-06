@@ -17,7 +17,7 @@
 
 // #define WALL_FOLLOW_DIST    400 // [mm]
 int16_t WALL_FOLLOW_DIST = 0;
-#define WALL_FOLLOW_VEL 30 // [rad/s]
+#define WALL_FOLLOW_VEL 35 // [rad/s]
 
 PIDController wall_follow_pid;
 

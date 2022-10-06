@@ -33,6 +33,9 @@ void wall_follow_state();
 
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
+uint32_t weight_dis[NUM_WEIGHT_DETECTION_DIRECTIONS];
+uint32_t turn_to_weight_time = 2400;    // [ms]
+weight_detect_direction_t direction_to_turn = fowards;
 
 void setup()
 {
@@ -66,7 +69,7 @@ void loop()
         uint32_t count_m = get_consecutive_weight_detections(fowards,      &distance_m);
         uint32_t count_r = get_consecutive_weight_detections(right_foward, &distance_r);
 
-        // Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
+        Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
         // Serial.printf("Distance_middle: %u, count: %u\n", distance_m, count_m);
     }
 
@@ -110,7 +113,12 @@ void wall_follow_state()
     int8_t turn_vel = -100;
     uint16_t turn_time = 500;
     uint16_t wall_distance = 370;
-    side_t what_wall = left_wall;
+    uint16_t num_dects = 10;
+    side_t wall_to_follow = left_wall;
+
+    bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 3;
+    bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 3;
+    bool weight_detected_middle     = get_consecutive_weight_detections(fowards, &weight_dis[fowards])              > num_dects;
 
     typedef enum
     {
@@ -133,29 +141,37 @@ void wall_follow_state()
     }
 
     uint64_t time_since_task_transition = millis() - last_task_transition_time;
+    
 
     // ------------------- State-machine tasks below ---------------------
     switch (current_task)
     {
     case start_task:
-        update_wall_follow(what_wall);
-        if (is_weight_in_range())
-        {
-            state = pickup_weight;
-        }
-        else if (is_centre_weight_detected())
-        {
-            state = approach_weight;
-        }
-        else if (is_left_weight_detected())
+        update_wall_follow(wall_to_follow);
+
+        
+        if (weight_detected_left)
         {
             state = face_weight_left;
+            direction_to_turn = left_foward;
+            break;
         }
-        else if (is_right_weight_detected())
+
+        if (weight_detected_right)
         {
             state = face_weight_right;
+            direction_to_turn = right_foward;
+            break;
         }
-        else if (get_sensor_distance(front_top) < wall_distance)
+
+        if (weight_detected_middle)
+        {
+            state = approach_weight;
+            direction_to_turn = fowards;
+            break;
+        }
+            
+        if (get_sensor_distance(front_top) < wall_distance)
         {
             current_task = rev;
         }
@@ -172,8 +188,8 @@ void wall_follow_state()
         break;
 
     case turn:
-        set_motor_velocity_left(turn_vel * what_wall);
-        set_motor_velocity_right(-turn_vel * what_wall);
+        set_motor_velocity_left(turn_vel * wall_to_follow);
+        set_motor_velocity_right(-turn_vel * wall_to_follow);
 
         if (time_since_task_transition > turn_time)
         {
@@ -339,6 +355,12 @@ void approach_weight_state()
         start_task = 0,
         task1,
     } task_t;
+    
+    uint32_t mrad = 15;     // [rad/s]
+    uint32_t v = mrad * 55; // [mm/s]
+    uint32_t time =  weight_dis[direction_to_turn] * 1000 / v; 
+    set_motor_velocity_left(mrad);
+    set_motor_velocity_right(mrad);
 
     static task_t current_task = start_task;
     static task_t last_task = start_task;
@@ -361,28 +383,10 @@ void approach_weight_state()
         break;
 
     case task1:
-        //** Some initilization code!! **//
-        // TODO To pick a weight up, this code relies on the front sensors constantly detecting the weights
-        // If at any time they stop detecting weights then it gives up and moves to the "start_state"
-        // This is a problem
-        if (is_centre_weight_detected())
+
+        if (time_since_task_transition > time)
         {
-            set_motor_velocity_left(17);
-            set_motor_velocity_right(17);
-            if (is_weight_in_range())
-            {
-                state = pickup_weight;
-            }
-        }
-        else
-        {
-            current_task = start_task; // Reset current_task before changing state
-            state = start;
-        }
-        if (time_since_task_transition > 5000) // Allows for non-blocking delays
-        {
-            current_task = start_task; // Reset current_task before changing state
-            state = start;             // Change state
+            state = pickup_weight;
         }
         break;
 
@@ -424,15 +428,9 @@ void face_weight_right_state()
         //** Some initilization code!! **//
         set_motor_velocity_left(17);
         set_motor_velocity_right(-17);
-        if (is_centre_weight_detected())
+        if (time_since_task_transition > turn_to_weight_time)
         {
-            current_task = start_task;
             state = approach_weight;
-        }
-        if (time_since_task_transition > 3000) // Allows for non-blocking delays
-        {
-            current_task = start_task; // Reset current_task before changing state
-            state = start;             // Change state
         }
         break;
 
@@ -474,15 +472,9 @@ void face_weight_left_state()
         //** Some initilization code!! **//
         set_motor_velocity_left(-17);
         set_motor_velocity_right(17);
-        if (is_centre_weight_detected())
+        if (time_since_task_transition > turn_to_weight_time)
         {
-            current_task = start_task;
             state = approach_weight;
-        }
-        if (time_since_task_transition > 3000) // Allows for non-blocking delays
-        {
-            current_task = start_task; // Reset current_task before changing state
-            state = start;             // Change state
         }
         break;
 
