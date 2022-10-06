@@ -1,6 +1,8 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
+#define NUM_WEIGHT_DETECTION_DIRECTIONS 3
+
 typedef enum
 {
     right = 0,
