@@ -57,6 +57,20 @@ void loop()
     update_channels(); // Updates the array of channel values from the remote control
     update_motors();   // Runs the PID loop using the encoders and controls the speed of the motors
 
+    static uint64_t ls = 0;
+    if(millis() - ls > 500)
+    {
+        ls = millis();
+        uint32_t distance_l, distance_m, distance_r;
+        uint32_t count_l = get_consecutive_weight_detections(left_foward,  &distance_l);
+        uint32_t count_m = get_consecutive_weight_detections(fowards,      &distance_m);
+        uint32_t count_r = get_consecutive_weight_detections(right_foward, &distance_r);
+
+        // Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
+        // Serial.printf("Distance_middle: %u, count: %u\n", distance_m, count_m);
+    }
+
+
     switch (state)
     {
     case start:
@@ -163,7 +177,7 @@ void wall_follow_state()
 
         if (time_since_task_transition > turn_time)
         {
-            current_task = start_task;
+            current_task = start_task; // TODO This code is cursed, please fix it
         }
         break;
 
@@ -254,7 +268,6 @@ void pickup_weight_state()
 
     case task2: // Close then open pincers
         set_pincer_servos_angle(MAX_ANGLE_PINCER);
-        set_front_electromag(true); // Turn on front electromag
         set_motor_velocity_left(-15);
         set_motor_velocity_right(-15);
         if (time_since_task_transition > 1000)
@@ -268,6 +281,7 @@ void pickup_weight_state()
         break;
 
     case task3: // Move fowards, slowly
+        set_front_electromag(true); // Turn on front electromag
         set_motor_velocity_left(10);
         set_motor_velocity_right(10);
         if (time_since_task_transition > 1700)
@@ -532,7 +546,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        print_state(state); // Print the current state
+        // print_state(state); // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }

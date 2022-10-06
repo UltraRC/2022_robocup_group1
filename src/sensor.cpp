@@ -29,10 +29,25 @@ uint16_t sensor_L1_values[L1_sensor_count];
 uint16_t sensor_values[L0_sensor_count+L1_sensor_count]; // TODO this number used to be +1
 
 // ****** Weight pickup variables ******
+#define NUM_WEIGHT_DETECTION_DIRECTIONS 3
+
 bool weight_in_range = false;
 bool right_weight_detected = false;
 bool left_weight_detected = false;
 bool centre_weight_detected = false;
+
+// Distances between the top and bottom weight detection sensors
+#define LEFT_SENSOR_MOUNTED_OFFSET      50  // [mm]
+#define FOWARD_SENSOR_MOUNTED_OFFSET    95  // [mm]
+#define RIGHT_SENSOR_MOUNTED_OFFSET     50  // [mm]
+
+uint32_t sensor_mounted_offsets[NUM_WEIGHT_DETECTION_DIRECTIONS] = {
+                                LEFT_SENSOR_MOUNTED_OFFSET, 
+                                FOWARD_SENSOR_MOUNTED_OFFSET, 
+                                RIGHT_SENSOR_MOUNTED_OFFSET};
+
+uint32_t consecutive_weight_detections[NUM_WEIGHT_DETECTION_DIRECTIONS];
+uint32_t weight_distances[NUM_WEIGHT_DETECTION_DIRECTIONS];
 
 void init_sensors()
 {
@@ -48,6 +63,7 @@ void update_sensors(void)
         last_time = millis();
         update_tof_sensors();
         update_weight_distances();
+        update_consecutive_weight_detections();
     }
 }
 
@@ -212,6 +228,81 @@ void update_tof_sensors()
     sensor_values[(int) front_left_top]     = sensor_L1_values[3];
     sensor_values[(int) front_bottom]       = sensor_L1_values[4];
     sensor_values[(int) front_top]          = sensor_L1_values[5];                    // TODO implement code for polling LR TOF sensor
+}
+
+// ****************** Weight Detection Code ******************
+
+/**
+ * @brief Returns the number of times that weights have been consecutively 
+ * detected in a particular direction ==> (left, fowards, right).
+ * 
+ * @param direction     => Defines which direction to test weight detection
+ * @param distance_mm   => Returns how far away the weight is.
+ * @return uint16_t     => Number of consectutive weight detections.
+ */
+uint32_t get_consecutive_weight_detections(weight_detect_direction_t direction, uint32_t *distance_mm)
+{
+    *distance_mm = weight_distances[(int)direction];
+    return consecutive_weight_detections[(int)direction];
+}
+
+void update_consecutive_weight_detections()
+{
+    // static uint32_t consecutive_weight_detections[NUM_WEIGHT_DETECTION_DIRECTIONS];
+    int32_t weight_detection_delta  = 100;  // [mm] ==> Threshold difference between top and bottom sensors to qualify as a weight detection
+    uint32_t max_search_distance    = 500;  // [mm]
+
+    // consecutive_weight_detections[(int)left_foward]     = 0;
+    // consecutive_weight_detections[(int)fowards]         = 0;
+    // consecutive_weight_detections[(int)right_foward]    = 0;
+
+    uint32_t distance_front_left_bottom     = get_sensor_distance(front_left_bottom);   // TODO this is not neccessary
+    uint32_t distance_front_bottom          = get_sensor_distance(front_bottom);
+    uint32_t distance_front_right_bottom    = get_sensor_distance(front_right_bottom);
+
+    int32_t delta_left      = get_sensor_distance(front_left_top)   - distance_front_left_bottom    - sensor_mounted_offsets[(int)left_foward];
+    int32_t delta_foward    = get_sensor_distance(front_top)        - distance_front_bottom         - sensor_mounted_offsets[(int)fowards];
+    int32_t delta_right     = get_sensor_distance(front_right_top)  - distance_front_right_bottom   - sensor_mounted_offsets[(int)right_foward];
+
+     // ****** Front Left ******
+    if(delta_left > weight_detection_delta && get_sensor_distance(front_left_bottom) < max_search_distance)
+    {
+        consecutive_weight_detections[(int)left_foward] += 1;
+        weight_distances[(int)left_foward] = distance_front_left_bottom;
+        // Serial.printf("Weight detected left\n");
+    }
+    else
+    {
+        consecutive_weight_detections[(int)left_foward] = 0;
+        weight_distances[(int)left_foward] = 0;
+    }
+
+    // ****** Middle / Fowards ******
+    if(delta_foward > weight_detection_delta && get_sensor_distance(front_bottom) < max_search_distance)
+    {
+        consecutive_weight_detections[(int)fowards] += 1;
+        // Serial.printf("middle count: %u\n", consecutive_weight_detections[fowards]);
+        weight_distances[(int)fowards] = distance_front_bottom;
+        // Serial.printf("Weight detected middle\n");
+    }
+    else
+    {
+        consecutive_weight_detections[(int)fowards] = 0;
+        weight_distances[(int)fowards] = 0;
+    }
+
+    // ****** Front Right ******
+    if(delta_right > weight_detection_delta && get_sensor_distance(front_right_bottom) < max_search_distance)
+    {
+        consecutive_weight_detections[(int)right_foward] += 1;
+        weight_distances[(int)right_foward] = distance_front_right_bottom;
+        // Serial.printf("Weight detected right\n");
+    }
+    else
+    {
+        consecutive_weight_detections[(int)right_foward] = 0;
+        weight_distances[(int)right_foward] = 0;
+    }
 }
 
 uint16_t get_sensor_distance(sensor_t sensor)

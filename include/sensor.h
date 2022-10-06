@@ -1,7 +1,8 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
-typedef enum {
+typedef enum
+{
     right = 0,
     front_right_top,
     front_right_bottom,
@@ -11,6 +12,16 @@ typedef enum {
     front_top,
     front_bottom
 } sensor_t;
+
+// An enumeration to which describes which direction
+// weights are being detected.
+// It refers to the three pairs of stacked weight detection sensors at the front of the robot.
+typedef enum
+{
+    left_foward = 0,
+    fowards,
+    right_foward
+} weight_detect_direction_t;
 
 void init_sensors(void);
 void update_sensors(void);
@@ -25,5 +36,7 @@ bool is_left_weight_detected(void);
 bool is_centre_weight_detected(void);
 bool is_weight_in_range(void);
 
+uint32_t get_consecutive_weight_detections(weight_detect_direction_t direction, uint32_t *distance_mm);
+void update_consecutive_weight_detections(void);
 
 #endif // SENSOR_H
