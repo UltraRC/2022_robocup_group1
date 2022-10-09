@@ -1,10 +1,12 @@
 #ifndef ACTUATOR_H
 #define ACTUATOR_H
 
-    #define MIN_ANGLE_PINCER    +80
+    #define MIN_ANGLE_PINCER    +77
     #define MAX_ANGLE_PINCER    -5
     #define MIN_ANGLE_MAIN      +50
-    #define MAX_ANGLE_MAIN      -65
+    #define MAX_ANGLE_MAIN      -15
+    #define ANGLE_OFFSET -5
+    #define LEFT_OFFSET -1
 
     void init_actuators(void);
     
