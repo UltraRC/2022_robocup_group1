@@ -60,12 +60,13 @@ void init_sensors()
     Serial.begin(9600);
     Serial.println("Color View Test!");
 
-    if (tcs.begin(0x40)) //checking if color sensor working
+    if (tcs.begin(0x29, &Wire1)) //checking if color sensor working
   {
     Serial.println("Found sensor");
   } else 
   {
     Serial.println("No TCS34725 found ... check your connections");
+    while (1);
   }
 }
 
@@ -80,6 +81,7 @@ void update_sensors(void)
         update_weight_distances();
         update_consecutive_weight_detections();
         update_color_sensor();
+        
     }
 }
 
