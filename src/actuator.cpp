@@ -31,9 +31,9 @@ void init_servos()
 
 void set_actuators_default_values()
 {
-    set_main_servo_angle(MAX_ANGLE_MAIN+50);
+    set_main_servo_angle(MAX_ANGLE_MAIN);
     set_electromag(false);
-    set_pincer_servos_angle(MIN_ANGLE_PINCER-15);
+    set_pincer_servos_angle(MIN_ANGLE_PINCER);
 }
 
 void init_weight_drop(void)
@@ -48,8 +48,8 @@ void set_main_servo_angle(int32_t angle)
 
 void set_pincer_servos_angle(int32_t angle)
 {
-    pincer_servo_left.write(90 + angle);
-    pincer_servo_right.write(90 - angle);
+    pincer_servo_left.write(90 + angle + ANGLE_OFFSET + LEFT_OFFSET);
+    pincer_servo_right.write(90 - angle + ANGLE_OFFSET);
 }
 
 void init_electromag()

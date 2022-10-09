@@ -3,6 +3,8 @@
 #include <VL53L0X.h>
 #include <VL53L1X.h>
 #include <SparkFunSX1509.h>
+#include <SPI.h>
+#include "Adafruit_TCS34725.h"
 #include "sensor.h"
 
 #define SENSOR_UPDATE_PERIOD 65         // [ms]
@@ -10,6 +12,7 @@
  // ****** TOF - SENSOR CONFIG ******
 #define VL53L0X_ADDRESS_START 0x30      // Addresses to start indexing sensor addresses
 #define VL53L1X_ADDRESS_START 0x35
+//#define COLOR_SENSOR_ADDRESS  //SCL3M, SDA3M
 
 const uint8_t L0_sensor_count = 2;
 const uint8_t L1_sensor_count = 6;
@@ -18,7 +21,11 @@ const uint8_t xshutPinsL0[8] = {0, 1};
 const uint8_t xshutPinsL1[8] = {2, 3, 4, 5, 6, 7};
 
 const byte SX1509_ADDRESS = 0x3F;       // Adress for io-expander
-SX1509 io;                              // Create an SX1509 object to be used throughout
+SX1509 io;
+
+uint16_t clear, red, green, blue; //color values
+float r, g, b;
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);                       // Create an SX1509 object to be used throughout
 
 VL53L0X sensorsL0[L0_sensor_count];     // Arrays of sensor objects
 VL53L1X sensorsL1[L1_sensor_count];
@@ -50,6 +57,16 @@ uint32_t weight_distances[NUM_WEIGHT_DETECTION_DIRECTIONS];
 void init_sensors()
 {
     init_tof_sensors();
+    Serial.begin(9600);
+    Serial.println("Color View Test!");
+
+    if (tcs.begin(0x40)) //checking if color sensor working
+  {
+    Serial.println("Found sensor");
+  } else 
+  {
+    Serial.println("No TCS34725 found ... check your connections");
+  }
 }
 
 void update_sensors(void)
@@ -62,7 +79,35 @@ void update_sensors(void)
         update_tof_sensors();
         update_weight_distances();
         update_consecutive_weight_detections();
+        update_color_sensor();
     }
+}
+
+void update_color_sensor(void) {
+    
+
+    tcs.setInterrupt(false);      // turn on LED
+
+    delay(60);  // takes 50ms to read 
+    
+    tcs.getRawData(&red, &green, &blue, &clear);
+
+    tcs.setInterrupt(true);  // turn off LED
+    
+    Serial.print("C:\t"); Serial.print(clear);
+    Serial.print("\tR:\t"); Serial.print(red);
+    Serial.print("\tG:\t"); Serial.print(green);
+    Serial.print("\tB:\t"); Serial.print(blue);
+
+    // Figure out some basic hex code for visualization
+    uint32_t sum = clear;
+    r = red; r /= sum;
+    g = green; g /= sum;
+    b = blue; b /= sum;
+    r *= 256; g *= 256; b *= 256;
+    Serial.print("\t");
+    Serial.print((int)r, HEX); Serial.print((int)g, HEX); Serial.print((int)b, HEX);
+    Serial.println();
 }
 
 void update_weight_distances() 
