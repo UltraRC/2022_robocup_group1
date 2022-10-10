@@ -34,7 +34,7 @@ void wall_follow_state();
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 uint32_t weight_dis[NUM_WEIGHT_DETECTION_DIRECTIONS];
-uint32_t turn_to_weight_time = 2400;    // [ms]
+uint32_t turn_to_weight_time = 1800;    // [ms]
 weight_detect_direction_t direction_to_turn = fowards;
 
 void setup()
@@ -116,7 +116,7 @@ void wall_follow_state()
     uint16_t turn_time = 300;
     uint16_t wall_distance = 370;
     uint16_t num_dects = 10;
-    side_t wall_to_follow = left_wall;
+    side_t wall_to_follow = right_wall;
 
     bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 3;
     bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 3;
@@ -176,15 +176,16 @@ void wall_follow_state()
         if (get_sensor_distance(front_top) < wall_distance)
         {
             current_task = rev;
-            turn_vel *= wall_to_follow;
-        } else if (get_sensor_distance(front_right_top) < 200)
+        }
+        
+        if (get_sensor_distance(front_right_top) < 200)
         {
             current_task = rev;
-            turn_vel *= wall_to_follow;
-        } else if (get_sensor_distance(front_left_top) < 200)
+        }
+        
+        if (get_sensor_distance(front_left_top) < 200)
         {
             current_task = rev;
-            turn_vel *= wall_to_follow;
         }
         break;
 
@@ -199,8 +200,8 @@ void wall_follow_state()
         break;
 
     case turn:
-        set_motor_velocity_left(turn_vel);
-        set_motor_velocity_right(-turn_vel);
+        set_motor_velocity_left(-turn_vel * wall_to_follow);
+        set_motor_velocity_right(turn_vel * wall_to_follow);
 
         if (time_since_task_transition > turn_time)
         {
@@ -369,7 +370,7 @@ void approach_weight_state()
     
     uint32_t mrad = 15;     // [rad/s]
     uint32_t v = mrad * 55; // [mm/s]
-    uint32_t time =  weight_dis[direction_to_turn] * 1000 / v; 
+    uint32_t time =  weight_dis[direction_to_turn] * 1000 / v + 20; 
     set_motor_velocity_left(mrad);
     set_motor_velocity_right(mrad);
 
