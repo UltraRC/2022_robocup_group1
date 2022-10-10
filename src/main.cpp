@@ -45,7 +45,7 @@ void setup()
     // {
     //     ;       // Wait until serial connection
     // }
-    Serial.printf("Serial initiated!!\n\n");
+    // Serial.printf("Serial initiated!!\n\n");
 
     init_motors();
     init_actuators();
@@ -64,13 +64,15 @@ void loop()
     if(millis() - ls > 500)
     {
         ls = millis();
-        uint32_t distance_l, distance_m, distance_r;
-        uint32_t count_l = get_consecutive_weight_detections(left_foward,  &distance_l);
-        uint32_t count_m = get_consecutive_weight_detections(fowards,      &distance_m);
-        uint32_t count_r = get_consecutive_weight_detections(right_foward, &distance_r);
+        // uint32_t distance_l, distance_m, distance_r;
+        // uint32_t count_l = get_consecutive_weight_detections(left_foward,  &distance_l);
+        // uint32_t count_m = get_consecutive_weight_detections(fowards,      &distance_m);
+        // uint32_t count_r = get_consecutive_weight_detections(right_foward, &distance_r);
 
-        Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
+        //Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
         // Serial.printf("Distance_middle: %u, count: %u\n", distance_m, count_m);
+
+        Serial.printf("topL %d topM %d topR %d botL %d botM %d bot_R %d\n", get_sensor_distance(front_right_top), get_sensor_distance(front_top), get_sensor_distance(front_left_top), get_sensor_distance(front_right_bottom), get_sensor_distance(front_bottom), get_sensor_distance(front_left_bottom));
     }
 
 
@@ -109,9 +111,9 @@ void loop()
 void wall_follow_state()
 {
     int8_t reverse_velocity = -50;
-    uint16_t reverse_time = 300;
-    int8_t turn_vel = -100;
-    uint16_t turn_time = 500;
+    uint16_t reverse_time = 200;
+    int8_t turn_vel = 35;
+    uint16_t turn_time = 300;
     uint16_t wall_distance = 370;
     uint16_t num_dects = 10;
     side_t wall_to_follow = left_wall;
@@ -174,6 +176,15 @@ void wall_follow_state()
         if (get_sensor_distance(front_top) < wall_distance)
         {
             current_task = rev;
+            turn_vel *= wall_to_follow;
+        } else if (get_sensor_distance(front_right_top) < 200)
+        {
+            current_task = rev;
+            turn_vel *= wall_to_follow;
+        } else if (get_sensor_distance(front_left_top) < 200)
+        {
+            current_task = rev;
+            turn_vel *= wall_to_follow;
         }
         break;
 
@@ -188,8 +199,8 @@ void wall_follow_state()
         break;
 
     case turn:
-        set_motor_velocity_left(turn_vel * wall_to_follow);
-        set_motor_velocity_right(-turn_vel * wall_to_follow);
+        set_motor_velocity_left(turn_vel);
+        set_motor_velocity_right(-turn_vel);
 
         if (time_since_task_transition > turn_time)
         {
