@@ -55,7 +55,11 @@ void setup()
 
 void loop()
 {
+    uint64_t start_time = micros();
+    static uint32_t delta_time, sensor_time;
     update_sensors();
+    sensor_time = micros()-start_time;
+
     state_tracker();   // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
     update_channels(); // Updates the array of channel values from the remote control
     update_motors();   // Runs the PID loop using the encoders and controls the speed of the motors
@@ -63,16 +67,12 @@ void loop()
     static uint64_t ls = 0;
     if(millis() - ls > 500)
     {
+        Serial.printf("\t* Loop time: %u [us]\t\t Sensor time: %u [us]\n", delta_time, sensor_time);
         ls = millis();
-        // uint32_t distance_l, distance_m, distance_r;
-        // uint32_t count_l = get_consecutive_weight_detections(left_foward,  &distance_l);
-        // uint32_t count_m = get_consecutive_weight_detections(fowards,      &distance_m);
-        // uint32_t count_r = get_consecutive_weight_detections(right_foward, &distance_r);
-
-        //Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
-        // Serial.printf("Distance_middle: %u, count: %u\n", distance_m, count_m);
-
-        // Serial.printf("topL %d topM %d topR %d botL %d botM %d bot_R %d\n", get_sensor_distance(front_right_top), get_sensor_distance(front_top), get_sensor_distance(front_left_top), get_sensor_distance(front_right_bottom), get_sensor_distance(front_bottom), get_sensor_distance(front_left_bottom));
+        if(delta_time > 10000)
+        {
+            init_tof_sensors();
+        }
     }
 
 
@@ -106,6 +106,7 @@ void loop()
     default:
         break;
     }
+    delta_time = micros() - start_time;
 }
 
 void wall_follow_state()
