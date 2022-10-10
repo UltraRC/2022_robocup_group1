@@ -45,7 +45,7 @@ void setup()
     // {
     //     ;       // Wait until serial connection
     // }
-    // Serial.printf("Serial initiated!!\n\n");
+    Serial.printf("Serial initiated!!\n\n");
 
     init_motors();
     init_actuators();
@@ -72,7 +72,7 @@ void loop()
         //Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
         // Serial.printf("Distance_middle: %u, count: %u\n", distance_m, count_m);
 
-        Serial.printf("topL %d topM %d topR %d botL %d botM %d bot_R %d\n", get_sensor_distance(front_right_top), get_sensor_distance(front_top), get_sensor_distance(front_left_top), get_sensor_distance(front_right_bottom), get_sensor_distance(front_bottom), get_sensor_distance(front_left_bottom));
+        // Serial.printf("topL %d topM %d topR %d botL %d botM %d bot_R %d\n", get_sensor_distance(front_right_top), get_sensor_distance(front_top), get_sensor_distance(front_left_top), get_sensor_distance(front_right_bottom), get_sensor_distance(front_bottom), get_sensor_distance(front_left_bottom));
     }
 
 
@@ -279,7 +279,6 @@ void pickup_weight_state()
     switch (current_task)
     {
     case start_task: // Default task
-        // set_pincer_servos_angle(MIN_ANGLE_PINCER);
         current_task = task1;
         break;
 
@@ -398,6 +397,7 @@ void approach_weight_state()
 
         if (time_since_task_transition > time)
         {
+            current_task = start_task;
             state = pickup_weight;
         }
         break;
@@ -442,6 +442,7 @@ void face_weight_right_state()
         set_motor_velocity_right(-17);
         if (time_since_task_transition > turn_to_weight_time)
         {
+            current_task = start_task;
             state = approach_weight;
         }
         break;
@@ -486,6 +487,7 @@ void face_weight_left_state()
         set_motor_velocity_right(17);
         if (time_since_task_transition > turn_to_weight_time)
         {
+            current_task = start_task;
             state = approach_weight;
         }
         break;
@@ -550,7 +552,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        // print_state(state); // Print the current state
+        print_state(state); // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }

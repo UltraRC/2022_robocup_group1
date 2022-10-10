@@ -247,54 +247,25 @@ void update_tof_sensors()
 {
     for (uint8_t i = 0; i < L0_sensor_count; i++)
     {
-        sensor_L0_values[i] = sensorsL0[i].readRangeSingleMillimeters(); // TODO should this be continuous?
-        if (sensorsL0[i].timeoutOccurred())
-            Serial.println(" TIMEOUT");
+        sensor_L0_values[i] = sensorsL0[i].readRangeContinuousMillimeters(); // TODO should this be continuous?
+        if (sensorsL0[i].timeoutOccurred()) Serial.printf("TIMEOUT!! on L0[%d]\n", i);
     }
 
     for (uint8_t i = 0; i < L1_sensor_count; i++)
     {
         sensor_L1_values[i] = sensorsL1[i].readRangeContinuousMillimeters();
-        if (sensorsL1[i].timeoutOccurred())
-            Serial.println(" TIMEOUT");
+        if (sensorsL1[i].timeoutOccurred()) Serial.printf("TIMEOUT!! on L1[%d]\n", i);
     }
 
-    // const double VL53L0X_max_distance = 950;    // [mm]
-    // double delta = 40;                         // [mm]
+    sensor_values[(int)right]               = sensor_L0_values[0];
+    sensor_values[(int)left]                = sensor_L0_values[1];
 
-    // double L0X_sample = sensorsL0[0].readRangeContinuousMillimeters();
-    // double L1X_sample = sensorsL1[0].readRangeContinuousMillimeters();
-
-    // L0X_sample = L0X_sample > VL53L0X_max_distance ? VL53L0X_max_distance : L0X_sample;
-
-    // static int32_t consecutive_weight_detections = 0;
-    // const int32_t consecutive_weight_detections_threshold = 3;
-
-    // if(L1X_sample - L0X_sample > delta && L0X_sample < VL53L0X_max_distance)
-    // {
-    //     consecutive_weight_detections++;
-    // } else
-    // {
-    //     consecutive_weight_detections = 0;
-    // }
-
-    // if (consecutive_weight_detections >= consecutive_weight_detections_threshold)
-    // {
-    //     is_weight_detected = true;
-    // } else
-    // {
-    //     is_weight_detected = false;
-    // }
-
-    sensor_values[(int)right] = sensor_L0_values[0];
-    sensor_values[(int)left] = sensor_L0_values[1];
-
-    sensor_values[(int)front_right_bottom] = sensor_L1_values[0];
-    sensor_values[(int)front_left_bottom] = sensor_L1_values[1];
-    sensor_values[(int)front_right_top] = sensor_L1_values[2];
-    sensor_values[(int)front_left_top] = sensor_L1_values[3];
-    sensor_values[(int)front_bottom] = sensor_L1_values[4];
-    sensor_values[(int)front_top] = sensor_L1_values[5]; // TODO implement code for polling LR TOF sensor
+    sensor_values[(int)front_right_bottom]  = sensor_L1_values[0];
+    sensor_values[(int)front_left_bottom]   = sensor_L1_values[1];
+    sensor_values[(int)front_right_top]     = sensor_L1_values[2];
+    sensor_values[(int)front_left_top]      = sensor_L1_values[3];
+    sensor_values[(int)front_bottom]        = sensor_L1_values[4];
+    sensor_values[(int)front_top]           = sensor_L1_values[5];
 }
 
 // ****************** Weight Detection Code ******************
