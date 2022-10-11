@@ -162,6 +162,8 @@ void init_tof_sensors()
 {
     io.begin(SX1509_ADDRESS);
 
+    Wire.end();
+    delay(500);
     Wire.begin();
     Wire.setClock(400000); // use 400 kHz I2C
 
@@ -198,7 +200,7 @@ void init_tof_sensors()
         io.digitalWrite(xshutPinsL0[i], HIGH);
         delay(10);
 
-        sensorsL0[i].setTimeout(500);
+        sensorsL0[i].setTimeout(50);
         if (!sensorsL0[i].init())
         {
             Serial.print("Failed to detect and initialize sensor L0 ");
@@ -225,7 +227,7 @@ void init_tof_sensors()
         io.digitalWrite(xshutPinsL1[i], HIGH);
         delay(10);
 
-        sensorsL1[i].setTimeout(500);
+        sensorsL1[i].setTimeout(50);
         if (!sensorsL1[i].init())
         {
             Serial.print("Failed to detect and initialize sensor L1 ");

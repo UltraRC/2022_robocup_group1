@@ -34,7 +34,7 @@ void wall_follow_state();
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 uint32_t weight_dis[NUM_WEIGHT_DETECTION_DIRECTIONS];
-uint32_t turn_to_weight_time = 1800;    // [ms]
+uint32_t turn_to_weight_time = 500;    // [ms]
 weight_detect_direction_t direction_to_turn = fowards;
 
 void setup()
@@ -310,8 +310,8 @@ void pickup_weight_state()
 
     case task3: // Move fowards, slowly
         set_front_electromag(true); // Turn on front electromag
-        set_motor_velocity_left(10);
-        set_motor_velocity_right(10);
+        set_motor_velocity_left(12);
+        set_motor_velocity_right(12);
         if (time_since_task_transition > 1700)
         {
             set_pincer_servos_angle(MAX_ANGLE_PINCER);
@@ -439,8 +439,8 @@ void face_weight_right_state()
 
     case task1:
         //** Some initilization code!! **//
-        set_motor_velocity_left(17);
-        set_motor_velocity_right(-17);
+        // set_motor_velocity_left(17);
+        set_motor_velocity_right(-25);
         if (time_since_task_transition > turn_to_weight_time)
         {
             current_task = start_task;
@@ -484,8 +484,8 @@ void face_weight_left_state()
 
     case task1:
         //** Some initilization code!! **//
-        set_motor_velocity_left(-17);
-        set_motor_velocity_right(17);
+        set_motor_velocity_left(-25);
+        // set_motor_velocity_right(17);
         if (time_since_task_transition > turn_to_weight_time)
         {
             current_task = start_task;
