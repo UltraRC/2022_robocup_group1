@@ -39,7 +39,7 @@ weight_detect_direction_t direction_to_turn = fowards;
 
 void setup()
 {
-    delay(1500);
+    delay(500);
     Serial.begin(9600);
     // while(!Serial)
     // {
@@ -71,6 +71,16 @@ void loop()
         ls = millis();
     }
 
+    if(millis() > 120000)
+    {
+        set_weight_drop(true);
+        set_motor_power_left(0);
+        set_motor_power_right(0);
+        while(1)
+        {
+            ;
+        }
+    }
 
     switch (state)
     {
@@ -112,17 +122,18 @@ void wall_follow_state()
     int8_t turn_vel = 35;
     uint16_t turn_time = 300;
     uint16_t wall_distance = 370;
-    uint16_t num_dects = 10;
+    uint16_t num_dects = 7;
     side_t wall_to_follow = right_wall;
 
-    bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 3;
-    bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 3;
+    bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 2;
+    bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 2;
     bool weight_detected_middle     = get_consecutive_weight_detections(fowards, &weight_dis[fowards])              > num_dects;
 
     typedef enum
     {
         start_task = 0,
         rev,
+        forward,
         turn
     } task_t;
 
@@ -195,6 +206,15 @@ void wall_follow_state()
             current_task = turn; // Reset current_task before changing state
         }
         break;
+    
+    case forward:
+        set_motor_velocity_left(-reverse_velocity);
+        set_motor_velocity_right(-reverse_velocity);
+        if (time_since_task_transition > reverse_time)
+        {
+            current_task = start_task; // Reset current_task before changing state
+        }
+        break;
 
     case turn:
         set_motor_velocity_left(-turn_vel * wall_to_follow);
@@ -202,7 +222,7 @@ void wall_follow_state()
 
         if (time_since_task_transition > turn_time)
         {
-            current_task = start_task; // TODO This code is cursed, please fix it
+            current_task = forward; // TODO This code is cursed, please fix it
         }
         break;
 
@@ -330,9 +350,9 @@ void pickup_weight_state()
         break;
 
     case task5: // Drop weight on the ramp and move backwards
-        set_motor_velocity_left(-10);
-        set_motor_velocity_right(-10);
-        if (time_since_task_transition > 1500)
+        set_motor_velocity_left(-15);
+        set_motor_velocity_right(-15);
+        if (time_since_task_transition > 1100)
         {
             set_electromag(false);
             set_motor_velocity_left(0);

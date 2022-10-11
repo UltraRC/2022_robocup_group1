@@ -168,8 +168,6 @@ void init_tof_sensors()
     Wire.begin();
     Wire.setClock(400000); // use 400 kHz I2C
 
-    tof_critical_error = false; // Calling the init_tof_sensors() method should resolve the error timeout critical error.
-
     // Disable/reset all sensors by driving their XSHUT pins low.
     for (uint8_t i = 0; i < L0_sensor_count; i++)
     {
@@ -255,6 +253,7 @@ void update_tof_sensors()
     if(tof_critical_error)
     {
         init_tof_sensors();
+        tof_critical_error = false;                 // Calling the init_tof_sensors() method should resolve the error timeout critical error.
     }
 
     for (uint8_t i = 0; i < L0_sensor_count; i++)
@@ -308,7 +307,7 @@ void update_consecutive_weight_detections()
 {
     // static uint32_t consecutive_weight_detections[NUM_WEIGHT_DETECTION_DIRECTIONS];
     int32_t weight_detection_delta = 100; // [mm] ==> Threshold difference between top and bottom sensors to qualify as a weight detection
-    uint32_t max_search_distance = 500;   // [mm]
+    uint32_t max_search_distance = 600;   // [mm]
 
     // consecutive_weight_detections[(int)left_foward]     = 0;
     // consecutive_weight_detections[(int)fowards]         = 0;
@@ -336,7 +335,7 @@ void update_consecutive_weight_detections()
     }
 
     // ****** Middle / Fowards ******
-    if (delta_foward > weight_detection_delta && get_sensor_distance(front_bottom) < max_search_distance)
+    if (delta_foward > weight_detection_delta && get_sensor_distance(front_bottom) < max_search_distance-150)
     {
         consecutive_weight_detections[(int)fowards] += 1;
         // Serial.printf("middle count: %u\n", consecutive_weight_detections[fowards]);
