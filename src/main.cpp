@@ -69,10 +69,6 @@ void loop()
     {
         Serial.printf("\t* Loop time: %u [us]\t\t Sensor time: %u [us]\n", delta_time, sensor_time);
         ls = millis();
-        if(delta_time > 10000)
-        {
-            init_tof_sensors();
-        }
     }
 
 

@@ -23,10 +23,6 @@ const uint8_t xshutPinsL1[8] = {2, 3, 4, 5, 6, 7};
 const byte SX1509_ADDRESS = 0x3F; // Adress for io-expander
 SX1509 io;
 
-uint16_t clear, red, green, blue; // color values
-float r, g, b;
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X); // Create an SX1509 object to be used throughout
-
 VL53L0X sensorsL0[L0_sensor_count]; // Arrays of sensor objects
 VL53L1X sensorsL1[L1_sensor_count];
 
@@ -34,6 +30,13 @@ uint16_t sensor_L0_values[L0_sensor_count]; // Arrays of sensor measurments
 uint16_t sensor_L1_values[L1_sensor_count];
 
 uint16_t sensor_values[L0_sensor_count + L1_sensor_count]; // TODO this number used to be +1
+
+bool tof_critical_error = false;
+
+// ****** Colour - SENSOR CONFIG ******
+uint16_t clear, red, green, blue; // color values
+float r, g, b;
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X); // Create an SX1509 object to be used throughout
 
 // ****** Weight pickup variables ******
 bool weight_in_range = false;
@@ -161,11 +164,11 @@ void update_weight_distances()
 void init_tof_sensors()
 {
     io.begin(SX1509_ADDRESS);
-
     Wire.end();
-    delay(500);
     Wire.begin();
     Wire.setClock(400000); // use 400 kHz I2C
+
+    tof_critical_error = false; // Calling the init_tof_sensors() method should resolve the error timeout critical error.
 
     // Disable/reset all sensors by driving their XSHUT pins low.
     for (uint8_t i = 0; i < L0_sensor_count; i++)
@@ -183,11 +186,13 @@ void init_tof_sensors()
     for (uint8_t i = 0; i < L0_sensor_count; i++)
     {
         io.digitalWrite(xshutPinsL0[i], LOW);
+        sensorsL0[i] = VL53L0X();
     }
 
     for (uint8_t i = 0; i < L1_sensor_count; i++)
     {
         io.digitalWrite(xshutPinsL1[i], LOW);
+        sensorsL1[i] = VL53L1X();
     }
 
     // L0 Enable, initialize, and start each sensor, one by one.
@@ -247,16 +252,29 @@ void init_tof_sensors()
 
 void update_tof_sensors()
 {
+    if(tof_critical_error)
+    {
+        init_tof_sensors();
+    }
+
     for (uint8_t i = 0; i < L0_sensor_count; i++)
     {
         sensor_L0_values[i] = sensorsL0[i].readRangeContinuousMillimeters(); // TODO should this be continuous?
-        if (sensorsL0[i].timeoutOccurred()) Serial.printf("TIMEOUT!! on L0[%d]\n", i);
+        if (sensorsL0[i].timeoutOccurred())
+        {
+            Serial.printf("TIMEOUT!! on L0[%d]\n", i);
+            tof_critical_error = true;
+        }
     }
 
     for (uint8_t i = 0; i < L1_sensor_count; i++)
     {
         sensor_L1_values[i] = sensorsL1[i].readRangeContinuousMillimeters();
-        if (sensorsL1[i].timeoutOccurred()) Serial.printf("TIMEOUT!! on L1[%d]\n", i);
+        if (sensorsL1[i].timeoutOccurred())
+        {
+            Serial.printf("TIMEOUT!! on L1[%d]\n", i);
+            tof_critical_error = true;
+        }
     }
 
     sensor_values[(int)right]               = sensor_L0_values[0];
