@@ -59,4 +59,7 @@ uint32_t get_weight_distance(weight_detect_direction_t direction);
 bool ramp_detected(void);
 bool ramp_detected_timed(uint32_t time_threshold);
 
+bool plastic_detected_timed(uint32_t time_threshold);
+void plastic_weight_dected (void);
+
 #endif // SENSOR_H
