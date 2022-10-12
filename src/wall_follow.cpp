@@ -26,19 +26,37 @@ void init_wall_follow()
     PIDController_Init(&wall_follow_pid);
 }
 
-void update_wall_follow(side_t side)
+void update_wall_follow(side_t side, bool use_bottom_sensors)
 {
     if(millis() > 60000)
     {
         WALL_FOLLOW_DIST = 1000;
     }
 
-    sensor_t sensor = front_right_top;
-    if (side == left_wall)
-    {
-        sensor = front_left_top;
-    }
+    sensor_t sensor = front_left_top;    // Sensor that is used for wall following
 
+    if(use_bottom_sensors)
+    {
+        if (side == left_wall)
+        {
+            sensor = front_left_bottom;
+        }
+        else
+        {
+            sensor = front_right_bottom;
+        } 
+    }
+    else
+    {
+        if (side == left_wall)
+        {
+            sensor = front_left_top;
+        }
+        else
+        {
+        sensor = front_right_top;
+        } 
+    }
     // WALL_FOLLOW_DIST = 450 + 200*sin(millis()/500.0);
 
     static uint64_t last_time = 0;

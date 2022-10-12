@@ -38,11 +38,21 @@ uint16_t clear, red, green, blue; // color values
 float r, g, b;
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X); // Create an SX1509 object to be used throughout
 
-// ****** Weight pickup variables ******
+// ****** Weight detection variables ******
 bool weight_in_range = false;
 bool right_weight_detected = false;
 bool left_weight_detected = false;
 bool centre_weight_detected = false;
+
+uint32_t consecutive_weight_detections[NUM_WEIGHT_DETECTION_DIRECTIONS];
+uint32_t weight_distances[NUM_WEIGHT_DETECTION_DIRECTIONS];
+bool weights_detected[NUM_WEIGHT_DETECTION_DIRECTIONS];
+
+#define DETECTION_THRESH_LEFT       2
+#define DETECTION_THRESH_RIGHT      2
+#define DETECTION_THRESH_FOWARDS    7
+
+uint32_t last_time_ramp_detected = 0;
 
 // Distances between the top and bottom weight detection sensors
 #define LEFT_SENSOR_MOUNTED_OFFSET 50   // [mm]
@@ -54,8 +64,6 @@ uint32_t sensor_mounted_offsets[NUM_WEIGHT_DETECTION_DIRECTIONS] = {
     FOWARD_SENSOR_MOUNTED_OFFSET,
     RIGHT_SENSOR_MOUNTED_OFFSET};
 
-uint32_t consecutive_weight_detections[NUM_WEIGHT_DETECTION_DIRECTIONS];
-uint32_t weight_distances[NUM_WEIGHT_DETECTION_DIRECTIONS];
 
 void init_sensors()
 {
@@ -76,13 +84,13 @@ void init_sensors()
 void update_sensors(void)
 {
     static uint64_t last_time = 0;
-
+    // Serial.printf("Left: %d\tMiddle: %d\tRight: %d\t\n", weights_detected[left_foward], weights_detected[fowards], weights_detected[right_foward]);
     if (millis() - last_time > SENSOR_UPDATE_PERIOD)
     {
         last_time = millis();
         update_tof_sensors();
-        update_weight_distances();
         update_consecutive_weight_detections();
+        // update_weight_distances();
         // update_color_sensor();
     }
 }
@@ -287,31 +295,29 @@ void update_tof_sensors()
     sensor_values[(int)front_top]           = sensor_L1_values[5];
 }
 
-// ****************** Weight Detection Code ******************
-
-/**
- * @brief Returns the number of times that weights have been consecutively
- * detected in a particular direction ==> (left, fowards, right).
- *
- * @param direction     => Defines which direction to test weight detection
- * @param distance_mm   => Returns how far away the weight is.
- * @return uint16_t     => Number of consectutive weight detections.
- */
-uint32_t get_consecutive_weight_detections(weight_detect_direction_t direction, uint32_t *distance_mm)
+weight_detect_t get_consecutive_weight_detections(weight_detect_direction_t direction)
 {
-    *distance_mm = weight_distances[(int)direction];
-    return consecutive_weight_detections[(int)direction];
+    weight_detect_t wd;
+    wd.consecutive_weight_detections    = consecutive_weight_detections[(int)direction];
+    wd.weight_distance                  = weight_distances[(int)direction];
+    return wd;
+}
+
+bool weight_detected(weight_detect_direction_t direction)
+{
+    // weights_detected[direction] = get_consecutive_weight_detections(direction).consecutive_weight_detections > consecutive_weight_detection_threshold;
+    return weights_detected[direction];
+}
+
+uint32_t get_weight_distance(weight_detect_direction_t direction)
+{
+    return weight_distances[direction];
 }
 
 void update_consecutive_weight_detections()
 {
-    // static uint32_t consecutive_weight_detections[NUM_WEIGHT_DETECTION_DIRECTIONS];
     int32_t weight_detection_delta = 100; // [mm] ==> Threshold difference between top and bottom sensors to qualify as a weight detection
     uint32_t max_search_distance = 600;   // [mm]
-
-    // consecutive_weight_detections[(int)left_foward]     = 0;
-    // consecutive_weight_detections[(int)fowards]         = 0;
-    // consecutive_weight_detections[(int)right_foward]    = 0;
 
     uint32_t distance_front_left_bottom = get_sensor_distance(front_left_bottom); // TODO this is not neccessary
     uint32_t distance_front_bottom = get_sensor_distance(front_bottom);
@@ -326,7 +332,6 @@ void update_consecutive_weight_detections()
     {
         consecutive_weight_detections[(int)left_foward] += 1;
         weight_distances[(int)left_foward] = distance_front_left_bottom;
-        // Serial.printf("Weight detected left\n");
     }
     else
     {
@@ -338,9 +343,7 @@ void update_consecutive_weight_detections()
     if (delta_foward > weight_detection_delta && get_sensor_distance(front_bottom) < max_search_distance-150)
     {
         consecutive_weight_detections[(int)fowards] += 1;
-        // Serial.printf("middle count: %u\n", consecutive_weight_detections[fowards]);
         weight_distances[(int)fowards] = distance_front_bottom;
-        // Serial.printf("Weight detected middle\n");
     }
     else
     {
@@ -353,13 +356,20 @@ void update_consecutive_weight_detections()
     {
         consecutive_weight_detections[(int)right_foward] += 1;
         weight_distances[(int)right_foward] = distance_front_right_bottom;
-        // Serial.printf("Weight detected right\n");
     }
     else
     {
         consecutive_weight_detections[(int)right_foward] = 0;
         weight_distances[(int)right_foward] = 0;
     }
+
+    // **************** Check if detections are over thresholds ****************
+
+    weights_detected[left_foward]   = consecutive_weight_detections[left_foward]    >   DETECTION_THRESH_LEFT;
+    weights_detected[right_foward]  = consecutive_weight_detections[right_foward]   >   DETECTION_THRESH_FOWARDS;
+    weights_detected[fowards]       = consecutive_weight_detections[fowards]        >   DETECTION_THRESH_RIGHT;
+
+    if(ramp_detected()) last_time_ramp_detected = millis();
 }
 
 uint16_t get_sensor_distance(sensor_t sensor)
@@ -367,22 +377,50 @@ uint16_t get_sensor_distance(sensor_t sensor)
     return sensor_values[(int)sensor];
 }
 
-bool is_right_weight_detected()
+bool ramp_detected()
 {
-    return right_weight_detected;
+    return (weights_detected[left_foward] && weights_detected[fowards]) || (weights_detected[right_foward] && weights_detected[fowards]); 
 }
 
-bool is_left_weight_detected()
+bool ramp_detected_timed(uint32_t time_threshold)
 {
-    return left_weight_detected;
+    uint32_t time_since_ramp_detection = millis() - last_time_ramp_detected;
+    return time_since_ramp_detection < time_threshold;
 }
 
-bool is_centre_weight_detected()
-{
-    return centre_weight_detected;
-}
+// // ****************** Weight Detection Code ******************
 
-bool is_weight_in_range()
-{
-    return weight_in_range;
-}
+// /**
+//  * @brief Returns the number of times that weights have been consecutively
+//  * detected in a particular direction ==> (left, fowards, right).
+//  *
+//  * @param direction     => Defines which direction to test weight detection
+//  * @param distance_mm   => Returns how far away the weight is.
+//  * @return uint16_t     => Number of consectutive weight detections.
+//  */
+// uint32_t get_consecutive_weight_detections(weight_detect_direction_t direction, uint32_t *distance_mm)
+// {
+//     *distance_mm = weight_distances[(int)direction];
+//     return consecutive_weight_detections[(int)direction];
+// }
+
+
+// bool is_right_weight_detected()
+// {
+//     return right_weight_detected;
+// }
+
+// bool is_left_weight_detected()
+// {
+//     return left_weight_detected;
+// }
+
+// bool is_centre_weight_detected()
+// {
+//     return centre_weight_detected;
+// }
+
+// bool is_weight_in_range()
+// {
+//     return weight_in_range;
+// }

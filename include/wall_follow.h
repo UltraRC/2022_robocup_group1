@@ -7,6 +7,6 @@ typedef enum {
 } side_t;
 
 void init_wall_follow(void);
-void update_wall_follow(side_t);
+void update_wall_follow(side_t side, bool use_bottom_sensors);
 
 #endif // WALL_FOLLOW_H
