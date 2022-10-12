@@ -8,11 +8,22 @@
 #include "sensor.h"
 
 #define SENSOR_UPDATE_PERIOD 65 // [ms]
+#define HOME_BASE_COLOR_VARIANCE 10 //+/- this num to be within reasonable range
 
 // ****** TOF - SENSOR CONFIG ******
 #define VL53L0X_ADDRESS_START 0x30 // Addresses to start indexing sensor addresses
 #define VL53L1X_ADDRESS_START 0x35
+
+#define LIMIT_SWITCH_PIN 15
+
 //#define COLOR_SENSOR_ADDRESS  //SCL3M, SDA3M
+#define GREEN_R 66
+#define GREEN_G 117
+#define GREEN_B 60
+
+#define BLUE_R 35
+#define BLUE_G 77
+#define BLUE_B 135
 
 const uint8_t L0_sensor_count = 2;
 const uint8_t L1_sensor_count = 6;
@@ -36,6 +47,7 @@ bool tof_critical_error = false;
 // ****** Colour - SENSOR CONFIG ******
 uint16_t clear, red, green, blue; // color values
 float r, g, b;
+uint16_t color_delay_count = 0;
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X); // Create an SX1509 object to be used throughout
 
 // ****** Weight pickup variables ******
@@ -43,6 +55,9 @@ bool weight_in_range = false;
 bool right_weight_detected = false;
 bool left_weight_detected = false;
 bool centre_weight_detected = false;
+
+// ****** limit switch variable ******
+bool limit_switch_on = false;
 
 // Distances between the top and bottom weight detection sensors
 #define LEFT_SENSOR_MOUNTED_OFFSET 50   // [mm]
@@ -60,17 +75,16 @@ uint32_t weight_distances[NUM_WEIGHT_DETECTION_DIRECTIONS];
 void init_sensors()
 {
     init_tof_sensors();
-    // Serial.begin(9600);
-    // Serial.println("Color View Test!");
-
-    // if (tcs.begin(0x40)) // checking if color sensor working
-    // {
-    //     Serial.println("Found sensor");
-    // }
-    // else
-    // {
-    //     Serial.println("No TCS34725 found ... check your connections");
-    // }
+    Serial.begin(9600);
+    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    if (tcs.begin(0x29, &Wire1)) // checking if color sensor working
+    {
+        Serial.println("Found sensor");
+    }
+    else
+    {
+        Serial.println("No TCS34725 found ... check your connections");
+    }
 }
 
 void update_sensors(void)
@@ -83,8 +97,47 @@ void update_sensors(void)
         update_tof_sensors();
         update_weight_distances();
         update_consecutive_weight_detections();
-        // update_color_sensor();
+        update_limit_switch();
+        if (color_delay_count < 10) 
+        {
+            color_delay_count ++;
+        } else {
+            update_color_sensor();
+            Serial.printf("updated color, R: %u G: %u, B: %u", (int)r, (int)g, (int)b);
+            color_delay_count = 0;
+        }
+        
     }
+}
+
+void update_limit_switch(void) 
+{
+    limit_switch_on = !digitalRead(LIMIT_SWITCH_PIN);
+}
+
+bool limit_switch(void) 
+{
+    return limit_switch_on;
+}
+
+bool at_blue_base(void)
+{
+    return (r < BLUE_R + HOME_BASE_COLOR_VARIANCE &&
+    r > BLUE_R - HOME_BASE_COLOR_VARIANCE &&
+    g < BLUE_G + HOME_BASE_COLOR_VARIANCE &&
+    g > BLUE_G - HOME_BASE_COLOR_VARIANCE &&
+    b < BLUE_B + HOME_BASE_COLOR_VARIANCE &&
+    b > BLUE_B - HOME_BASE_COLOR_VARIANCE);
+}
+
+bool at_green_base(void)
+{
+    return (r < GREEN_R + HOME_BASE_COLOR_VARIANCE &&
+    r > GREEN_R - HOME_BASE_COLOR_VARIANCE &&
+    g < GREEN_G + HOME_BASE_COLOR_VARIANCE &&
+    g > GREEN_G - HOME_BASE_COLOR_VARIANCE &&
+    b < GREEN_B + HOME_BASE_COLOR_VARIANCE &&
+    b > GREEN_B - HOME_BASE_COLOR_VARIANCE);
 }
 
 void update_color_sensor(void)
@@ -92,20 +145,11 @@ void update_color_sensor(void)
 
     tcs.setInterrupt(false); // turn on LED
 
-    delay(60); // takes 50ms to read
+    delay(10); // takes 50ms to read
 
     tcs.getRawData(&red, &green, &blue, &clear);
 
     tcs.setInterrupt(true); // turn off LED
-
-    Serial.print("C:\t");
-    Serial.print(clear);
-    Serial.print("\tR:\t");
-    Serial.print(red);
-    Serial.print("\tG:\t");
-    Serial.print(green);
-    Serial.print("\tB:\t");
-    Serial.print(blue);
 
     // Figure out some basic hex code for visualization
     uint32_t sum = clear;
@@ -118,11 +162,6 @@ void update_color_sensor(void)
     r *= 256;
     g *= 256;
     b *= 256;
-    Serial.print("\t");
-    Serial.print((int)r, HEX);
-    Serial.print((int)g, HEX);
-    Serial.print((int)b, HEX);
-    Serial.println();
 }
 
 void update_weight_distances()

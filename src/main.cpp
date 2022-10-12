@@ -18,7 +18,8 @@ typedef enum
     approach_weight,
     face_weight_right,
     face_weight_left,
-    follow_wall
+    follow_wall,
+    go_home
 } state_t;
 
 void start_state();
@@ -30,6 +31,7 @@ void state_tracker();
 void update_channels();
 void print_state(state_t state);
 void wall_follow_state();
+void go_home_state();
 
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
@@ -108,7 +110,8 @@ void loop()
     case follow_wall:
         wall_follow_state();
         break;
-
+    case go_home:
+        go_home_state();
     default:
         break;
     }
@@ -365,8 +368,14 @@ void pickup_weight_state()
         set_actuators_default_values();
         if (time_since_task_transition > 500)
         {
-            current_task = start_task;
-            state = start;
+            if (limit_switch()) {
+                current_task = start_task;
+                state = go_home;
+            } else {
+                current_task = start_task;
+                state = start;
+            }
+            
         }
         break;
 
@@ -514,6 +523,126 @@ void face_weight_left_state()
     }
 }
 
+void go_home_state()
+{
+   //** Add an arbitrary number of states to complete complete a sequence of events **//
+    typedef enum
+    {
+        start_task = 0,
+        task1,
+        task2,
+        task3,
+        rev,
+        forward,
+        turn
+    } task_t;
+
+    int8_t reverse_velocity = -50;
+    uint16_t reverse_time = 200;
+    int8_t turn_vel = 35;
+    uint16_t turn_time = 300;
+    uint16_t wall_distance = 370;
+    side_t wall_to_follow = right_wall;
+
+
+    static task_t current_task = start_task;
+    static task_t last_task = start_task;
+
+    static uint64_t last_task_transition_time = 0;
+
+    if (current_task != last_task)
+    {
+        last_task = current_task;
+        last_task_transition_time = millis();
+    }
+
+    uint64_t time_since_task_transition = millis() - last_task_transition_time;
+
+    // ------------------- State-machine tasks below ---------------------
+    switch (current_task)
+    {
+    case start_task:
+        current_task = task1;
+        break;
+    case task1:
+        update_wall_follow(wall_to_follow);
+            
+        if (get_sensor_distance(front_top) < wall_distance)
+        {
+            current_task = rev;
+        }
+        
+        if (get_sensor_distance(front_right_top) < 200)
+        {
+            current_task = rev;
+        }
+        
+        if (get_sensor_distance(front_left_top) < 200)
+        {
+            current_task = rev;
+        }
+        if (at_blue_base() || at_green_base()) //test code
+        {
+            current_task = task2;
+        }
+
+        break;
+
+    case rev:
+        set_motor_velocity_left(reverse_velocity);
+        set_motor_velocity_right(reverse_velocity);
+
+        if (time_since_task_transition > reverse_time)
+        {
+            current_task = turn; // Reset current_task before changing state
+        }
+        break;
+    
+    case forward:
+        set_motor_velocity_left(-reverse_velocity);
+        set_motor_velocity_right(-reverse_velocity);
+        if (time_since_task_transition > reverse_time)
+        {
+            current_task = start_task; // Reset current_task before changing state
+        }
+        break;
+
+    case turn:
+        set_motor_velocity_left(-turn_vel * wall_to_follow);
+        set_motor_velocity_right(turn_vel * wall_to_follow);
+
+        if (time_since_task_transition > turn_time)
+        {
+            current_task = forward; // TODO This code is cursed, please fix it
+        }
+        break;
+
+    case task2:
+        set_motor_velocity_left(-17);
+        set_motor_velocity_right(17);
+        if ((!at_blue_base() && !at_green_base()) || time_since_task_transition > 5000) // Allows for non-blocking delays
+        {
+            current_task = task3; // Reset current_task before changing state
+        }
+        break;
+  
+    case task3:
+        set_motor_power_left(0);
+        set_motor_power_right(0);
+        set_weight_drop(true);
+        if (time_since_task_transition > 3000) // Allows for non-blocking delays
+        {
+            //** Do a thing after waiting for 1-second!! **//
+            current_task = start_task; // Reset current_task before changing state
+            state = start;             // Change state
+        }
+        break;
+
+    default:
+        break;
+    }  
+}
+
 void generic_state()
 {
     //** Add an arbitrary number of states to complete complete a sequence of events **//
@@ -610,6 +739,10 @@ void print_state(state_t state)
 
     case approach_weight:
         Serial.printf("state is: \"approach_weight\"\n");
+        break;
+
+    case go_home:
+        Serial.printf("state is: \"go_home\"\n");
         break;
 
     default:

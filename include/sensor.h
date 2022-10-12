@@ -32,12 +32,17 @@ void init_tof_sensors(void);
 void update_tof_sensors(void);
 uint16_t get_sensor_distance(sensor_t sensor);
 
+void update_limit_switch(void);
+bool limit_switch(void);
+
 void update_color_sensor(void);
 void update_weight_distances(void);
 bool is_right_weight_detected(void);
 bool is_left_weight_detected(void);
 bool is_centre_weight_detected(void);
 bool is_weight_in_range(void);
+bool at_green_base(void);
+bool at_blue_base(void);
 
 uint32_t get_consecutive_weight_detections(weight_detect_direction_t direction, uint32_t *distance_mm);
 void update_consecutive_weight_detections(void);
