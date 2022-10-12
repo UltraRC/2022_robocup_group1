@@ -4,6 +4,7 @@
 #include "actuator.h"
 #include "sensor.h"
 #include "wall_follow.h"
+#include "edge_case.h"
 
 #define RC_IN 23
 #define NUM_CHANNELS 6
@@ -35,9 +36,10 @@ void go_home_state();
 
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
-uint32_t weight_dis[NUM_WEIGHT_DETECTION_DIRECTIONS];
+uint32_t distance_to_weight = 0;
 uint32_t turn_to_weight_time = 500;    // [ms]
-weight_detect_direction_t direction_to_turn = fowards;
+// weight_detect_direction_t direction_to_turn = fowards;
+bool pick_up_not_allowed = false;
 
 void setup()
 {
@@ -69,7 +71,15 @@ void loop()
     static uint64_t ls = 0;
     if(millis() - ls > 500)
     {
-        Serial.printf("\t* Loop time: %u [us]\t\t Sensor time: %u [us]\n", delta_time, sensor_time);
+        //Serial.printf("\t* Loop time: %u [us]\t\t Sensor time: %u [us]\n", delta_time, sensor_time);
+    
+        if(pick_up_not_allowed) 
+        {
+            Serial.printf("DO NOT PICKUP!!!!\n");
+        } else {
+            Serial.printf("colllect\n");
+        }
+
         ls = millis();
     }
 
@@ -122,15 +132,19 @@ void wall_follow_state()
 {
     int8_t reverse_velocity = -50;
     uint16_t reverse_time = 200;
-    int8_t turn_vel = 35;
-    uint16_t turn_time = 300;
+    int8_t turn_vel = 40;
+    uint16_t turn_time = 400;
     uint16_t wall_distance = 370;
-    uint16_t num_dects = 7;
     side_t wall_to_follow = right_wall;
 
-    bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 2;
-    bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 2;
-    bool weight_detected_middle     = get_consecutive_weight_detections(fowards, &weight_dis[fowards])              > num_dects;
+    sensor_t avodance_sence[3];
+    avodance_sence[0] = front_left_top;
+    avodance_sence[1] = front_top;
+    avodance_sence[2] = front_right_top;
+
+    // bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 2;
+    // bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 2;
+    // bool weight_detected_middle     = get_consecutive_weight_detections(fowards, &weight_dis[fowards])              > num_dects;
 
     typedef enum
     {
@@ -154,50 +168,60 @@ void wall_follow_state()
     }
 
     uint64_t time_since_task_transition = millis() - last_task_transition_time;
+    // Serial.printf("Pickup is%sallowed\n", pick_up_not_allowed ? " not " : " ");
     
 
     // ------------------- State-machine tasks below ---------------------
     switch (current_task)
     {
     case start_task:
-        update_wall_follow(wall_to_follow);
+        update_wall_follow(wall_to_follow, pick_up_not_allowed);
+        pick_up_not_allowed = ramp_detected_timed(3000 );  // True if ramp is not detected
 
-        
-        if (weight_detected_left)
+        if (pick_up_not_allowed)
+        {
+            avodance_sence[0] = front_left_bottom;
+            avodance_sence[1] = front_bottom;
+            avodance_sence[2] = front_right_bottom;
+        }
+        else if (weight_detected(left_foward))    // ******** LEFT ********
         {
             state = face_weight_left;
-            direction_to_turn = left_foward;
+            distance_to_weight = get_weight_distance(left_foward);
             break;
         }
 
-        if (weight_detected_right)
+        else if (weight_detected(right_foward))   // ******** RIGHT ********
         {
             state = face_weight_right;
-            direction_to_turn = right_foward;
+            distance_to_weight = get_weight_distance(right_foward);
             break;
         }
 
-        if (weight_detected_middle)
+        else if (weight_detected(fowards))        // ******** FOWARDS ********
         {
             state = approach_weight;
-            direction_to_turn = fowards;
+            distance_to_weight = get_weight_distance(fowards);
             break;
         }
-            
-        if (get_sensor_distance(front_top) < wall_distance)
+
+        if (get_sensor_distance(avodance_sence[0]) < 200)
+        {
+            current_task = rev;
+        }
+
+        if (get_sensor_distance(avodance_sence[1]) < wall_distance)
         {
             current_task = rev;
         }
         
-        if (get_sensor_distance(front_right_top) < 200)
+        if (get_sensor_distance(avodance_sence[2]) < 200)
         {
             current_task = rev;
         }
         
-        if (get_sensor_distance(front_left_top) < 200)
-        {
-            current_task = rev;
-        }
+
+
         break;
 
     case rev:
@@ -211,8 +235,8 @@ void wall_follow_state()
         break;
     
     case forward:
-        set_motor_velocity_left(-reverse_velocity);
-        set_motor_velocity_right(-reverse_velocity);
+        set_motor_velocity_left(-reverse_velocity * 0.75);
+        set_motor_velocity_right(-reverse_velocity * 0.75);
         if (time_since_task_transition > reverse_time)
         {
             current_task = start_task; // Reset current_task before changing state
@@ -395,7 +419,7 @@ void approach_weight_state()
     
     uint32_t mrad = 15;     // [rad/s]
     uint32_t v = mrad * 55; // [mm/s]
-    uint32_t time =  weight_dis[direction_to_turn] * 1000 / v + 20; 
+    uint32_t time =  distance_to_weight * 1000 / v + 20; 
     set_motor_velocity_left(mrad);
     set_motor_velocity_right(mrad);
 
@@ -698,7 +722,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        print_state(state); // Print the current state
+        // print_state(state); // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }

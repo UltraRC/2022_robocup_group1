@@ -25,6 +25,12 @@ typedef enum
     right_foward
 } weight_detect_direction_t;
 
+typedef struct
+{
+    uint32_t consecutive_weight_detections;
+    uint32_t weight_distance;
+} weight_detect_t;
+
 void init_sensors(void);
 void update_sensors(void);
 
@@ -44,7 +50,13 @@ bool is_weight_in_range(void);
 bool at_green_base(void);
 bool at_blue_base(void);
 
-uint32_t get_consecutive_weight_detections(weight_detect_direction_t direction, uint32_t *distance_mm);
+// uint32_t get_consecutive_weight_detections(weight_detect_direction_t direction, uint32_t *distance_mm);
+weight_detect_t get_consecutive_weight_detections(weight_detect_direction_t direction);
+
 void update_consecutive_weight_detections(void);
+bool weight_detected(weight_detect_direction_t direction);
+uint32_t get_weight_distance(weight_detect_direction_t direction);
+bool ramp_detected(void);
+bool ramp_detected_timed(uint32_t time_threshold);
 
 #endif // SENSOR_H
