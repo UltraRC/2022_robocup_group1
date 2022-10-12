@@ -4,7 +4,7 @@
     #define MIN_ANGLE_PINCER    +77
     #define MAX_ANGLE_PINCER    -5
     #define MIN_ANGLE_MAIN      +50
-    #define MAX_ANGLE_MAIN      -60
+    #define MAX_ANGLE_MAIN      -65
     #define ANGLE_OFFSET -5
     #define LEFT_OFFSET -1
 

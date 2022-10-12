@@ -34,12 +34,12 @@ void wall_follow_state();
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 uint32_t weight_dis[NUM_WEIGHT_DETECTION_DIRECTIONS];
-uint32_t turn_to_weight_time = 2400;    // [ms]
+uint32_t turn_to_weight_time = 500;    // [ms]
 weight_detect_direction_t direction_to_turn = fowards;
 
 void setup()
 {
-    delay(1500);
+    delay(500);
     Serial.begin(9600);
     // while(!Serial)
     // {
@@ -55,7 +55,11 @@ void setup()
 
 void loop()
 {
+    uint64_t start_time = micros();
+    static uint32_t delta_time, sensor_time;
     update_sensors();
+    sensor_time = micros()-start_time;
+
     state_tracker();   // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
     update_channels(); // Updates the array of channel values from the remote control
     update_motors();   // Runs the PID loop using the encoders and controls the speed of the motors
@@ -63,16 +67,20 @@ void loop()
     static uint64_t ls = 0;
     if(millis() - ls > 500)
     {
+        Serial.printf("\t* Loop time: %u [us]\t\t Sensor time: %u [us]\n", delta_time, sensor_time);
         ls = millis();
-        uint32_t distance_l, distance_m, distance_r;
-        uint32_t count_l = get_consecutive_weight_detections(left_foward,  &distance_l);
-        uint32_t count_m = get_consecutive_weight_detections(fowards,      &distance_m);
-        uint32_t count_r = get_consecutive_weight_detections(right_foward, &distance_r);
-
-        Serial.printf("cl:%04u, dl:%04u\tcm:%04u, dm:%04u\tcr:%04u, dr:%04u\t\n", count_l, distance_l, count_m, distance_m, count_r, distance_r);
-        // Serial.printf("Distance_middle: %u, count: %u\n", distance_m, count_m);
     }
 
+    if(millis() > 120000)
+    {
+        set_weight_drop(true);
+        set_motor_power_left(0);
+        set_motor_power_right(0);
+        while(1)
+        {
+            ;
+        }
+    }
 
     switch (state)
     {
@@ -104,26 +112,28 @@ void loop()
     default:
         break;
     }
+    delta_time = micros() - start_time;
 }
 
 void wall_follow_state()
 {
     int8_t reverse_velocity = -50;
-    uint16_t reverse_time = 300;
-    int8_t turn_vel = -100;
-    uint16_t turn_time = 500;
+    uint16_t reverse_time = 200;
+    int8_t turn_vel = 35;
+    uint16_t turn_time = 300;
     uint16_t wall_distance = 370;
-    uint16_t num_dects = 10;
-    side_t wall_to_follow = left_wall;
+    uint16_t num_dects = 7;
+    side_t wall_to_follow = right_wall;
 
-    bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 3;
-    bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 3;
+    bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 2;
+    bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 2;
     bool weight_detected_middle     = get_consecutive_weight_detections(fowards, &weight_dis[fowards])              > num_dects;
 
     typedef enum
     {
         start_task = 0,
         rev,
+        forward,
         turn
     } task_t;
 
@@ -175,6 +185,16 @@ void wall_follow_state()
         {
             current_task = rev;
         }
+        
+        if (get_sensor_distance(front_right_top) < 200)
+        {
+            current_task = rev;
+        }
+        
+        if (get_sensor_distance(front_left_top) < 200)
+        {
+            current_task = rev;
+        }
         break;
 
     case rev:
@@ -186,14 +206,23 @@ void wall_follow_state()
             current_task = turn; // Reset current_task before changing state
         }
         break;
+    
+    case forward:
+        set_motor_velocity_left(-reverse_velocity);
+        set_motor_velocity_right(-reverse_velocity);
+        if (time_since_task_transition > reverse_time)
+        {
+            current_task = start_task; // Reset current_task before changing state
+        }
+        break;
 
     case turn:
-        set_motor_velocity_left(turn_vel * wall_to_follow);
-        set_motor_velocity_right(-turn_vel * wall_to_follow);
+        set_motor_velocity_left(-turn_vel * wall_to_follow);
+        set_motor_velocity_right(turn_vel * wall_to_follow);
 
         if (time_since_task_transition > turn_time)
         {
-            current_task = start_task; // TODO This code is cursed, please fix it
+            current_task = forward; // TODO This code is cursed, please fix it
         }
         break;
 
@@ -267,7 +296,6 @@ void pickup_weight_state()
     switch (current_task)
     {
     case start_task: // Default task
-        // set_pincer_servos_angle(MIN_ANGLE_PINCER);
         current_task = task1;
         break;
 
@@ -298,8 +326,8 @@ void pickup_weight_state()
 
     case task3: // Move fowards, slowly
         set_front_electromag(true); // Turn on front electromag
-        set_motor_velocity_left(10);
-        set_motor_velocity_right(10);
+        set_motor_velocity_left(12);
+        set_motor_velocity_right(12);
         if (time_since_task_transition > 1700)
         {
             set_pincer_servos_angle(MAX_ANGLE_PINCER);
@@ -322,9 +350,9 @@ void pickup_weight_state()
         break;
 
     case task5: // Drop weight on the ramp and move backwards
-        set_motor_velocity_left(-10);
-        set_motor_velocity_right(-10);
-        if (time_since_task_transition > 1500)
+        set_motor_velocity_left(-15);
+        set_motor_velocity_right(-15);
+        if (time_since_task_transition > 1100)
         {
             set_electromag(false);
             set_motor_velocity_left(0);
@@ -358,7 +386,7 @@ void approach_weight_state()
     
     uint32_t mrad = 15;     // [rad/s]
     uint32_t v = mrad * 55; // [mm/s]
-    uint32_t time =  weight_dis[direction_to_turn] * 1000 / v; 
+    uint32_t time =  weight_dis[direction_to_turn] * 1000 / v + 20; 
     set_motor_velocity_left(mrad);
     set_motor_velocity_right(mrad);
 
@@ -386,6 +414,7 @@ void approach_weight_state()
 
         if (time_since_task_transition > time)
         {
+            current_task = start_task;
             state = pickup_weight;
         }
         break;
@@ -426,10 +455,11 @@ void face_weight_right_state()
 
     case task1:
         //** Some initilization code!! **//
-        set_motor_velocity_left(17);
-        set_motor_velocity_right(-17);
+        // set_motor_velocity_left(17);
+        set_motor_velocity_right(-25);
         if (time_since_task_transition > turn_to_weight_time)
         {
+            current_task = start_task;
             state = approach_weight;
         }
         break;
@@ -470,10 +500,11 @@ void face_weight_left_state()
 
     case task1:
         //** Some initilization code!! **//
-        set_motor_velocity_left(-17);
-        set_motor_velocity_right(17);
+        set_motor_velocity_left(-25);
+        // set_motor_velocity_right(17);
         if (time_since_task_transition > turn_to_weight_time)
         {
+            current_task = start_task;
             state = approach_weight;
         }
         break;
@@ -538,7 +569,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        // print_state(state); // Print the current state
+        print_state(state); // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }
