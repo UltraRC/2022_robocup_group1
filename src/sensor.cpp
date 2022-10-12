@@ -12,6 +12,7 @@
 // ****** TOF - SENSOR CONFIG ******
 #define VL53L0X_ADDRESS_START 0x30 // Addresses to start indexing sensor addresses
 #define VL53L1X_ADDRESS_START 0x35
+#define LIMIT_SWITCH_PIN 15
 //#define COLOR_SENSOR_ADDRESS  //SCL3M, SDA3M
 
 const uint8_t L0_sensor_count = 2;
@@ -44,6 +45,10 @@ bool right_weight_detected = false;
 bool left_weight_detected = false;
 bool centre_weight_detected = false;
 
+// ****** limit switch variable ******
+bool limit_switch_on = false;
+
+
 // Distances between the top and bottom weight detection sensors
 #define LEFT_SENSOR_MOUNTED_OFFSET 50   // [mm]
 #define FOWARD_SENSOR_MOUNTED_OFFSET 95 // [mm]
@@ -60,6 +65,8 @@ uint32_t weight_distances[NUM_WEIGHT_DETECTION_DIRECTIONS];
 void init_sensors()
 {
     init_tof_sensors();
+    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    
     // Serial.begin(9600);
     // Serial.println("Color View Test!");
 
@@ -83,8 +90,20 @@ void update_sensors(void)
         update_tof_sensors();
         update_weight_distances();
         update_consecutive_weight_detections();
+        update_limit_switch();
         // update_color_sensor();
     }
+}
+
+void update_limit_switch(void) 
+{
+    limit_switch_on = !digitalRead(LIMIT_SWITCH_PIN);
+    Serial.printf("limit switch on: %u", limit_switch_on);
+}
+
+bool limit_switch(void) 
+{
+    return limit_switch_on;
 }
 
 void update_color_sensor(void)
