@@ -176,7 +176,7 @@ void wall_follow_state()
     {
     case start_task:
         update_wall_follow(wall_to_follow, pick_up_not_allowed);
-        pick_up_not_allowed = ramp_detected_timed(3000 );  // True if ramp is not detected
+        pick_up_not_allowed = ramp_detected_timed(3000);  // True if ramp is not detected
 
         if (pick_up_not_allowed)
         {
@@ -589,7 +589,7 @@ void go_home_state()
         current_task = task1;
         break;
     case task1:
-        update_wall_follow(wall_to_follow);
+        update_wall_follow(wall_to_follow, false);
             
         if (get_sensor_distance(front_top) < wall_distance)
         {

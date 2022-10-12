@@ -147,17 +147,6 @@ bool at_green_base(void)
     b > GREEN_B - HOME_BASE_COLOR_VARIANCE);
 }
 
-void update_limit_switch(void) 
-{
-    limit_switch_on = !digitalRead(LIMIT_SWITCH_PIN);
-    Serial.printf("limit switch on: %u", limit_switch_on);
-}
-
-bool limit_switch(void) 
-{
-    return limit_switch_on;
-}
-
 void update_color_sensor(void)
 {
 
