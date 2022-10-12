@@ -4,6 +4,7 @@
 #include "actuator.h"
 #include "sensor.h"
 #include "wall_follow.h"
+#include "edge_case.h"
 
 #define RC_IN 23
 #define NUM_CHANNELS 6
@@ -36,6 +37,7 @@ uint64_t time_since_last_state_transition = 0;
 uint32_t weight_dis[NUM_WEIGHT_DETECTION_DIRECTIONS];
 uint32_t turn_to_weight_time = 500;    // [ms]
 weight_detect_direction_t direction_to_turn = fowards;
+bool pick_up_allowed = true;
 
 void setup()
 {
@@ -129,6 +131,8 @@ void wall_follow_state()
     bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 2;
     bool weight_detected_middle     = get_consecutive_weight_detections(fowards, &weight_dis[fowards])              > num_dects;
 
+    pick_up_allowed = ramp_dect(weight_detected_left, weight_detected_right, weight_detected_right);
+
     typedef enum
     {
         start_task = 0,
@@ -159,28 +163,30 @@ void wall_follow_state()
     case start_task:
         update_wall_follow(wall_to_follow);
 
-        
-        if (weight_detected_left)
+        if (pick_up_allowed)
         {
-            state = face_weight_left;
-            direction_to_turn = left_foward;
-            break;
+            if (weight_detected_left)
+            {
+                state = face_weight_left;
+                direction_to_turn = left_foward;
+                break;
+            }
+
+            if (weight_detected_right)
+            {
+                state = face_weight_right;
+                direction_to_turn = right_foward;
+                break;
+            }
+
+            if (weight_detected_middle)
+            {
+                state = approach_weight;
+                direction_to_turn = fowards;
+                break;
+            }
         }
 
-        if (weight_detected_right)
-        {
-            state = face_weight_right;
-            direction_to_turn = right_foward;
-            break;
-        }
-
-        if (weight_detected_middle)
-        {
-            state = approach_weight;
-            direction_to_turn = fowards;
-            break;
-        }
-            
         if (get_sensor_distance(front_top) < wall_distance)
         {
             current_task = rev;
@@ -195,6 +201,7 @@ void wall_follow_state()
         {
             current_task = rev;
         }
+
         break;
 
     case rev:
