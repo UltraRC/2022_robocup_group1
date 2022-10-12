@@ -383,7 +383,7 @@ void pickup_weight_state()
     case task5: // Drop weight on the ramp and move backwards
         set_motor_velocity_left(-15);
         set_motor_velocity_right(-15);
-        if (time_since_task_transition > 1100)
+        if (time_since_task_transition > 1200)
         {
             set_electromag(false);
             set_motor_velocity_left(0);
