@@ -14,6 +14,12 @@ int32_t channels[NUM_CHANNELS];
 
 typedef enum
 {
+    blue,
+    green
+} base_t;
+
+typedef enum
+{
     start = 0,
     pickup_weight,
     approach_weight,
@@ -34,6 +40,9 @@ void print_state(state_t state);
 void wall_follow_state();
 void go_home_state();
 
+base_t home_base = blue; //set home base here
+base_t enemy_base = home_base == blue? green : blue;
+
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 uint32_t distance_to_weight = 0;
@@ -50,6 +59,7 @@ void setup()
     //     ;       // Wait until serial connection
     // }
     Serial.printf("Serial initiated!!\n\n");
+
 
     init_motors();
     init_actuators();
@@ -319,11 +329,21 @@ void pickup_weight_state()
 
     uint64_t time_since_task_transition = millis() - last_task_transition_time;
 
+    // ****************** Don't pickup if at enemy base ******************
+    if (at_green_base() || (at_blue_base()))
+    {
+        state = follow_wall;
+        current_task = start_task;
+        set_actuators_default_values();     // Return crane / pincers to default position
+        return;
+    }
+
     // ------------------- State-machine tasks below ---------------------
     switch (current_task)
     {
     case start_task: // Default task
         current_task = task1;
+
         break;
 
     case task1: // Move fowards
@@ -605,7 +625,7 @@ void go_home_state()
         {
             current_task = rev;
         }
-        if (at_blue_base() || at_green_base()) //test code
+        if ((at_blue_base() && home_base == blue) || (at_green_base() && home_base == green)) //home base detected
         {
             current_task = task2;
         }
@@ -644,7 +664,7 @@ void go_home_state()
     case task2:
         set_motor_velocity_left(-17);
         set_motor_velocity_right(17);
-        if ((!at_blue_base() && !at_green_base()) || time_since_task_transition > 5000) // Allows for non-blocking delays
+        if (time_since_task_transition > 3500) // Allows for non-blocking delays
         {
             current_task = task3; // Reset current_task before changing state
         }
@@ -654,9 +674,25 @@ void go_home_state()
         set_motor_power_left(0);
         set_motor_power_right(0);
         set_weight_drop(true);
-        if (time_since_task_transition > 3000) // Allows for non-blocking delays
+        if (time_since_task_transition > 2000) // jostles any stuck weights
+        {
+            set_motor_velocity_left(-20);
+            set_motor_velocity_right(-20);
+        }
+        if (time_since_task_transition > 2250) // jostles any stuck weights
+        {
+            set_motor_velocity_left(20);
+            set_motor_velocity_right(20);
+        }
+        if (time_since_task_transition > 2500) // jostles any stuck weights
+        {
+            set_motor_power_left(0);
+            set_motor_power_right(0);
+        }
+        if (time_since_task_transition > 4000) // Allows for non-blocking delays
         {
             //** Do a thing after waiting for 1-second!! **//
+            set_weight_drop(false);
             current_task = start_task; // Reset current_task before changing state
             state = start;             // Change state
         }

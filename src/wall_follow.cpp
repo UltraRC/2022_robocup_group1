@@ -28,10 +28,10 @@ void init_wall_follow()
 
 void update_wall_follow(side_t side, bool use_bottom_sensors)
 {
-    if(millis() > 60000)
-    {
-        WALL_FOLLOW_DIST = 1000;
-    }
+    // if(millis() > 60000)
+    // {
+    //     WALL_FOLLOW_DIST = 1000;
+    // }
 
     sensor_t sensor = front_left_top;    // Sensor that is used for wall following
 
@@ -92,7 +92,7 @@ void update_wall_follow(side_t side, bool use_bottom_sensors)
         float control = PIDController_Update(&wall_follow_pid, WALL_FOLLOW_DIST, measured_wall_distance);
         control /= 1000; // Control needs to be on the order of radians per second, so it is scaled
 
-        set_motor_velocity_left(WALL_FOLLOW_VEL - control * (int)side);
-        set_motor_velocity_right(WALL_FOLLOW_VEL + control * (int)side);
+        set_motor_velocity_left((WALL_FOLLOW_VEL - control * (int)side));
+        set_motor_velocity_right((WALL_FOLLOW_VEL + control * (int)side));
     }
 }
