@@ -19,7 +19,8 @@ typedef enum
     approach_weight,
     face_weight_right,
     face_weight_left,
-    follow_wall
+    follow_wall,
+    go_home
 } state_t;
 
 void start_state();
@@ -31,6 +32,7 @@ void state_tracker();
 void update_channels();
 void print_state(state_t state);
 void wall_follow_state();
+void go_home_state();
 
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
@@ -389,8 +391,14 @@ void pickup_weight_state()
         set_actuators_default_values();
         if (time_since_task_transition > 500)
         {
-            current_task = start_task;
-            state = start;
+            if (limit_switch()) {
+                current_task = start_task;
+                state = go_home;
+            } else {
+                current_task = start_task;
+                state = start;
+            }
+            
         }
         break;
 
@@ -536,6 +544,52 @@ void face_weight_left_state()
     default:
         break;
     }
+}
+
+void go_home_state()
+{
+   //** Add an arbitrary number of states to complete complete a sequence of events **//
+    typedef enum
+    {
+        start_task = 0,
+        task1,
+    } task_t;
+
+    static task_t current_task = start_task;
+    static task_t last_task = start_task;
+
+    static uint64_t last_task_transition_time = 0;
+
+    if (current_task != last_task)
+    {
+        last_task = current_task;
+        last_task_transition_time = millis();
+    }
+
+    uint64_t time_since_task_transition = millis() - last_task_transition_time;
+
+    // ------------------- State-machine tasks below ---------------------
+    switch (current_task)
+    {
+    case start_task:
+        current_task = task1;
+        break;
+
+    case task1:
+        //** Some initilization code!! **//
+
+        if (time_since_task_transition > 1000) // Allows for non-blocking delays
+        {
+            //** Do a thing after waiting for 1-second!! **//
+
+            current_task = start_task; // Reset current_task before changing state
+            state = start;             // Change state
+        }
+        break;
+
+    default:
+        break;
+    }  
 }
 
 void generic_state()

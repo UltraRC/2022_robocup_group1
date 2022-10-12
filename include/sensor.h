@@ -38,6 +38,9 @@ void init_tof_sensors(void);
 void update_tof_sensors(void);
 uint16_t get_sensor_distance(sensor_t sensor);
 
+void update_limit_switch(void);
+bool limit_switch(void);
+
 void update_color_sensor(void);
 void update_weight_distances(void);
 bool is_right_weight_detected(void);
