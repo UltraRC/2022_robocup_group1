@@ -65,6 +65,7 @@ bool weights_detected[NUM_WEIGHT_DETECTION_DIRECTIONS];
 #define DETECTION_THRESH_FOWARDS    7
 
 uint32_t last_time_ramp_detected = 0;
+uint32_t last_time_plastic_detected = 0;
 
 // ****** limit switch variable ******
 bool limit_switch_on = false;
@@ -110,7 +111,7 @@ void update_sensors(void)
             color_delay_count ++;
         } else {
             update_color_sensor();
-            Serial.printf("updated color, R: %u G: %u, B: %u", (int)r, (int)g, (int)b);
+            //Serial.printf("updated color, R: %u G: %u, B: %u", (int)r, (int)g, (int)b);
             color_delay_count = 0;
         }
         
@@ -425,6 +426,35 @@ bool ramp_detected_timed(uint32_t time_threshold)
     uint32_t time_since_ramp_detection = millis() - last_time_ramp_detected;
     return time_since_ramp_detection < time_threshold;
 }
+
+void plastic_weight_dected (void)
+{
+    static uint32_t old_time = 0;
+    static uint16_t count = 0;
+    uint32_t new_time = millis();
+
+    if ((new_time - old_time) < 7000) // Consecutive weights detected within 8 seconds
+    {
+        count++;
+    } else {
+        count = 0;
+    }
+    
+    if (count >= 3)
+    {
+        last_time_plastic_detected = millis();
+        count = 0;
+    }
+    Serial.printf("new-old: %u\tcount: %u\tLast_detected: %u\n", new_time - old_time, count, millis() - last_time_plastic_detected);
+    old_time = millis();
+}
+
+bool plastic_detected_timed(uint32_t time_threshold)
+{
+    uint32_t time_since_plastic_detection = millis() - last_time_plastic_detected;
+    return time_since_plastic_detection < time_threshold && millis() >= 8000;
+}
+
 
 // // ****************** Weight Detection Code ******************
 

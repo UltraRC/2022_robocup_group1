@@ -78,21 +78,6 @@ void loop()
     update_channels(); // Updates the array of channel values from the remote control
     update_motors();   // Runs the PID loop using the encoders and controls the speed of the motors
 
-    static uint64_t ls = 0;
-    if(millis() - ls > 500)
-    {
-        //Serial.printf("\t* Loop time: %u [us]\t\t Sensor time: %u [us]\n", delta_time, sensor_time);
-    
-        if(pick_up_not_allowed) 
-        {
-            Serial.printf("DO NOT PICKUP!!!!\n");
-        } else {
-            Serial.printf("colllect\n");
-        }
-
-        ls = millis();
-    }
-
     if(millis() > 120000)
     {
         set_weight_drop(true);
@@ -152,10 +137,6 @@ void wall_follow_state()
     avodance_sence[1] = front_top;
     avodance_sence[2] = front_right_top;
 
-    // bool weight_detected_left       = get_consecutive_weight_detections(left_foward, &weight_dis[left_foward])      > 2;
-    // bool weight_detected_right      = get_consecutive_weight_detections(right_foward, &weight_dis[right_foward])    > 2;
-    // bool weight_detected_middle     = get_consecutive_weight_detections(fowards, &weight_dis[fowards])              > num_dects;
-
     typedef enum
     {
         start_task = 0,
@@ -186,7 +167,7 @@ void wall_follow_state()
     {
     case start_task:
         update_wall_follow(wall_to_follow, pick_up_not_allowed);
-        pick_up_not_allowed = ramp_detected_timed(3000);  // True if ramp is not detected
+        pick_up_not_allowed = plastic_detected_timed(8000) || ramp_detected_timed(3000);    // True if ramp is not detected
 
         if (pick_up_not_allowed)
         {
@@ -198,6 +179,7 @@ void wall_follow_state()
         {
             state = face_weight_left;
             distance_to_weight = get_weight_distance(left_foward);
+            plastic_weight_dected();
             break;
         }
 
@@ -205,6 +187,7 @@ void wall_follow_state()
         {
             state = face_weight_right;
             distance_to_weight = get_weight_distance(right_foward);
+            plastic_weight_dected();
             break;
         }
 
@@ -212,6 +195,7 @@ void wall_follow_state()
         {
             state = approach_weight;
             distance_to_weight = get_weight_distance(fowards);
+            plastic_weight_dected();
             break;
         }
 
