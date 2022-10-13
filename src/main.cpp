@@ -78,16 +78,16 @@ void loop()
     update_channels(); // Updates the array of channel values from the remote control
     update_motors();   // Runs the PID loop using the encoders and controls the speed of the motors
 
-    if(millis() > 120000)
-    {
-        set_weight_drop(true);
-        set_motor_power_left(0);
-        set_motor_power_right(0);
-        while(1)
-        {
-            ;
-        }
-    }
+    // if(millis() > 120000)
+    // {
+    //     set_weight_drop(true);
+    //     set_motor_power_left(0);
+    //     set_motor_power_right(0);
+    //     while(1)
+    //     {
+    //         ;
+    //     }
+    // }
 
     switch (state)
     {
@@ -742,7 +742,7 @@ void state_tracker()
 
     if (state != last_state)
     {
-        // print_state(state); // Print the current state
+        print_state(state); // Print the current state
         last_state_transition_time = millis();
         last_state = state;
     }

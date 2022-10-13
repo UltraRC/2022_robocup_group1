@@ -6,7 +6,7 @@
 
 #define PID_UPDATE_PERIOD 10000 // [us]
 
-#define KP 60
+#define KP 45
 #define KI 0.02
 #define KD 0
 #define TAU 0
