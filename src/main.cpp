@@ -46,7 +46,7 @@ base_t enemy_base = home_base == blue? green : blue;
 state_t state = start; // System state variable. E.g. Weight-collection state, navigation state.
 uint64_t time_since_last_state_transition = 0;
 uint32_t distance_to_weight = 0;
-uint32_t turn_to_weight_time = 500;    // [ms]
+uint32_t turn_to_weight_time = 700;    // [ms]
 // weight_detect_direction_t direction_to_turn = fowards;
 bool pick_up_not_allowed = false;
 
@@ -167,7 +167,7 @@ void wall_follow_state()
     {
     case start_task:
         update_wall_follow(wall_to_follow, pick_up_not_allowed);
-        pick_up_not_allowed = plastic_detected_timed(8000) || ramp_detected_timed(3000);    // True if ramp is not detected
+        pick_up_not_allowed = plastic_detected_timed(8000) || ramp_detected_timed(5000);    // True if ramp is not detected
 
         if (pick_up_not_allowed)
         {
@@ -264,27 +264,6 @@ void start_state()
     set_motor_velocity_left(map(left_speed, -100, 100, -45, 45));
     set_motor_velocity_right(map(right_speed, -100, 100, -45, 45));
 
-    // if(weight_detected())
-    // {
-    //     set_main_servo_angle(MAX_ANGLE_MAIN+15);
-    //     if(channels[4] < -50) state = pickup_weight;
-    // } else
-    // {
-    //     set_actuators_default_values();
-    //     state = spin;
-    // }
-
-    // if(channels[5] < -50)
-    // {
-    //     set_weight_drop(true);
-    // } else
-    // {
-    //     set_weight_drop(false);
-    // }
-
-    // if(weight_detected() && channels[4] < -50) state = pickup_weight;      // Transition state if button is pressed on remote
-
-    // if (channels[4] > 50) state = pickup_weight;      // Transition state if button is pressed on remote
 }
 
 void pickup_weight_state()
@@ -394,8 +373,16 @@ void pickup_weight_state()
 
     case task6:
         set_actuators_default_values();
-        if (time_since_task_transition > 500)
+        //reverses, resets, and waits before checking limit switch
+        if (time_since_task_transition > 500) // jostles any stuck weights
         {
+            set_motor_velocity_left(-20);
+            set_motor_velocity_right(-20);
+        }
+        if (time_since_task_transition > 1000)
+        {
+            set_motor_velocity_left(0);
+            set_motor_velocity_right(0);
             if (limit_switch()) {
                 current_task = start_task;
                 state = go_home;
@@ -468,6 +455,7 @@ void face_weight_right_state()
     {
         start_task = 0,
         task1,
+        task2
     } task_t;
 
     static task_t current_task = start_task;
@@ -489,8 +477,17 @@ void face_weight_right_state()
     case start_task:
         current_task = task1;
         break;
-
     case task1:
+        set_motor_velocity_left(-15);
+        set_motor_velocity_right(-15);
+        if(time_since_task_transition > 500)
+        {
+            set_motor_velocity_left(0);
+            set_motor_velocity_right(0);
+            current_task = task2;
+        }
+        break;
+    case task2:
         //** Some initilization code!! **//
         // set_motor_velocity_left(17);
         set_motor_velocity_right(-25);
@@ -513,6 +510,7 @@ void face_weight_left_state()
     {
         start_task = 0,
         task1,
+        task2
     } task_t;
 
     static task_t current_task = start_task;
@@ -536,6 +534,17 @@ void face_weight_left_state()
         break;
 
     case task1:
+        set_motor_velocity_left(-15);
+        set_motor_velocity_right(-15);
+        if(time_since_task_transition > 500)
+        {
+            set_motor_velocity_left(0);
+            set_motor_velocity_right(0);
+            current_task = task2;
+        }
+        break;
+
+    case task2:
         //** Some initilization code!! **//
         set_motor_velocity_left(-25);
         // set_motor_velocity_right(17);
