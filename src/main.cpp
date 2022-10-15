@@ -602,19 +602,19 @@ void go_home_state()
         current_task = task1;
         break;
     case task1:
-        update_wall_follow(wall_to_follow, false);
+        update_wall_follow(wall_to_follow, true);
             
-        if (get_sensor_distance(front_top) < wall_distance)
+        if (get_sensor_distance(front_bottom) < wall_distance)
         {
             current_task = rev;
         }
         
-        if (get_sensor_distance(front_right_top) < 200)
+        if (get_sensor_distance(front_right_bottom) < 200)
         {
             current_task = rev;
         }
         
-        if (get_sensor_distance(front_left_top) < 200)
+        if (get_sensor_distance(front_left_bottom) < 200)
         {
             current_task = rev;
         }
