@@ -29,6 +29,9 @@ typedef enum
     go_home
 } state_t;
 
+#define WEIGHT_SEARCH_VELOCITY  35  // Veclocity that the robot uses to follow the wall while it is searching for weights
+#define RETURN_HOME_VELOCITY    45 
+
 void start_state();
 void pickup_weight_state();
 void approach_weight_state();
@@ -47,8 +50,8 @@ state_t state = start; // System state variable. E.g. Weight-collection state, n
 uint64_t time_since_last_state_transition = 0;
 uint32_t distance_to_weight = 0;
 uint32_t turn_to_weight_time = 700;    // [ms]
-// weight_detect_direction_t direction_to_turn = fowards;
 bool pick_up_not_allowed = false;
+
 
 void setup()
 {
@@ -60,7 +63,6 @@ void setup()
     // }
     Serial.printf("Serial initiated!!\n\n");
 
-
     init_motors();
     init_actuators();
     init_sensors();
@@ -69,25 +71,10 @@ void setup()
 
 void loop()
 {
-    uint64_t start_time = micros();
-    static uint32_t delta_time, sensor_time;
     update_sensors();
-    sensor_time = micros()-start_time;
-
     state_tracker();   // Calculates the time since the last state-transition !!MAY NOT BE NECESSARY!!
     update_channels(); // Updates the array of channel values from the remote control
     update_motors();   // Runs the PID loop using the encoders and controls the speed of the motors
-
-    // if(millis() > 120000)
-    // {
-    //     set_weight_drop(true);
-    //     set_motor_power_left(0);
-    //     set_motor_power_right(0);
-    //     while(1)
-    //     {
-    //         ;
-    //     }
-    // }
 
     switch (state)
     {
@@ -120,7 +107,6 @@ void loop()
     default:
         break;
     }
-    delta_time = micros() - start_time;
 }
 
 void wall_follow_state()
@@ -130,7 +116,7 @@ void wall_follow_state()
     int8_t turn_vel = 40;
     uint16_t turn_time = 400;
     uint16_t wall_distance = 370;
-    side_t wall_to_follow = right_wall;
+    side_t wall_to_follow = (home_base == blue) ? right_wall : left_wall;   // Follows the appropriate wall when leaving home base. e.g. follows right wall traveling away from blue base
 
     sensor_t avodance_sence[3];
     avodance_sence[0] = front_left_top;
@@ -145,8 +131,6 @@ void wall_follow_state()
         turn
     } task_t;
 
-    // Serial.printf("Front_bottom_sensor: %u\n", get_sensor_distance(front_bottom));
-
     static task_t current_task = start_task;
     static task_t last_task = start_task;
 
@@ -159,13 +143,12 @@ void wall_follow_state()
     }
 
     uint64_t time_since_task_transition = millis() - last_task_transition_time;
-    // Serial.printf("Pickup is%sallowed\n", pick_up_not_allowed ? " not " : " ");
     
-
     // ------------------- State-machine tasks below ---------------------
     switch (current_task)
     {
     case start_task:
+        set_wall_follow_velocity(WEIGHT_SEARCH_VELOCITY);
         update_wall_follow(wall_to_follow, pick_up_not_allowed);
         pick_up_not_allowed = plastic_detected_timed(8000) || ramp_detected_timed(5000);    // True if ramp is not detected
 
@@ -571,7 +554,8 @@ void go_home_state()
         task3,
         rev,
         forward,
-        turn
+        turn,
+        approach_base
     } task_t;
 
     int8_t reverse_velocity = -50;
@@ -579,7 +563,7 @@ void go_home_state()
     int8_t turn_vel = 35;
     uint16_t turn_time = 300;
     uint16_t wall_distance = 370;
-    side_t wall_to_follow = right_wall;
+    side_t wall_to_follow = (home_base == blue) ? left_wall : right_wall;
 
 
     static task_t current_task = start_task;
@@ -602,6 +586,7 @@ void go_home_state()
         current_task = task1;
         break;
     case task1:
+        set_wall_follow_velocity(RETURN_HOME_VELOCITY);
         update_wall_follow(wall_to_follow, true);
             
         if (get_sensor_distance(front_bottom) < wall_distance)
@@ -620,7 +605,7 @@ void go_home_state()
         }
         if ((at_blue_base() && home_base == blue) || (at_green_base() && home_base == green)) //home base detected
         {
-            current_task = task2;
+            current_task = approach_base;
         }
 
         break;
@@ -653,10 +638,19 @@ void go_home_state()
             current_task = forward; // TODO This code is cursed, please fix it
         }
         break;
-
-    case task2:
-        set_motor_velocity_left(-17);
+    
+    case approach_base:     // When home base is detected, it keeps moving fowards slowly to ensure the robot is inside the base
+        set_motor_velocity_left(17);
         set_motor_velocity_right(17);
+        if(time_since_task_transition > 600)
+        {
+            current_task = task2;
+        }
+        break;
+
+    case task2:             // Turn around to deposit weights in home base
+        set_motor_velocity_left(-17 * wall_to_follow);  // TODO UNTESTED ==> Inverts the turn direction if follwing the left wall home
+        set_motor_velocity_right(17 * wall_to_follow);
         if (time_since_task_transition > 3500) // Allows for non-blocking delays
         {
             current_task = task3; // Reset current_task before changing state

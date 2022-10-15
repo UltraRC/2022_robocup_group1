@@ -15,8 +15,8 @@
 #define INT_LIM_MIN -30000
 #define INT_LIM_MAX +30000
 
-int16_t WALL_FOLLOW_DIST = 500;
-#define WALL_FOLLOW_VEL 35 // [rad/s]
+uint16_t WALL_FOLLOW_DIST   = 500;
+uint32_t WALL_FOLLOW_VEL    = 35; // [rad/s]
 
 PIDController wall_follow_pid;
 
@@ -28,11 +28,6 @@ void init_wall_follow()
 
 void update_wall_follow(side_t side, bool use_bottom_sensors)
 {
-    // if(millis() > 60000)
-    // {
-    //     WALL_FOLLOW_DIST = 1000;
-    // }
-
     sensor_t sensor = front_left_top;    // Sensor that is used for wall following
 
     if(use_bottom_sensors)
@@ -95,4 +90,23 @@ void update_wall_follow(side_t side, bool use_bottom_sensors)
         set_motor_velocity_left((WALL_FOLLOW_VEL - control * (int)side));
         set_motor_velocity_right((WALL_FOLLOW_VEL + control * (int)side));
     }
+}
+
+/**
+ * @brief Set the wall follow velocity
+ * 
+ * @param velocity [rad/s]
+ */
+void set_wall_follow_velocity(uint32_t velocity)
+{
+    WALL_FOLLOW_VEL = velocity;
+}
+
+/**
+ * @brief Set the wall follow distance
+ * @param distance [mm]
+ */
+void set_wall_follow_distance(uint32_t distance)
+{
+    WALL_FOLLOW_DIST = distance;
 }
